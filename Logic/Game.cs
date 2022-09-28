@@ -222,9 +222,11 @@ namespace Logic
 
         public bool IsWorking => _isWorking;
 
-        private State _start;
+        private State _start1;
+        private State _start2;
 
-        public State StartState => _start;
+        public State StartState1 => _start1;
+        public State StartState2 => _start2;
 
         private State _finishState1;
         private State _finishState2;
@@ -245,6 +247,7 @@ namespace Logic
         private Dictionary<string, State> C2 = new Dictionary<string, State>();
 
         private bool isFinish1(State state) => state == _finishState1;
+        private bool isFinish2(State state) => state == _finishState2;
 
         private double timer = 0;
 
@@ -252,9 +255,11 @@ namespace Logic
 
         public AI(Game game) => _game = game;
 
-        private List<Node> _wayToFinish = new List<Node>();
+        private List<Node> _wayToFinish1 = new List<Node>();
+        private List<Node> _wayToFinish2 = new List<Node>();
 
-        public List<Node> WayToFinish => _wayToFinish;
+        public List<Node> WayToFinish1 => _wayToFinish1;
+        public List<Node> WayToFinish2 => _wayToFinish2;
 
         private List<string> _AIInfo = new List<string>();
 
@@ -268,17 +273,24 @@ namespace Logic
 
         public void UpdateStates(State startState, State finishState)
         {
-            O.Clear();
-            C.Clear();
+            O1.Clear();
+            O2.Clear();
+            C1.Clear();
+            C2.Clear();
             _AIInfo.Clear();
             _wayToFinish.Clear();
             _iterationCounter = 0;
             _maxOCount = 0;
             _maxOAndCCount = 0;
-            _start = startState;
-            _currentState = _start;
-            O.Enqueue(new Node { value = startState, parent = null });
-            _finishState = finishState;
+            _start1 = startState;
+            _finishState1 = finishState;
+            _start2 = finishState;
+            _finishState2 = startState;
+            _currentState1 = _start1;
+            _currentState2 = _start2;
+            O1.Enqueue(new Node { value = startState, parent = null });
+            O2.Enqueue(new Node { value = finishState, parent = null });
+            
         }
 
         public void Start()
