@@ -6,6 +6,8 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using System.Drawing;
+using System.Security.Cryptography;
+using System.Xml.Linq;
 
 namespace Main
 {
@@ -98,8 +100,8 @@ namespace Main
 
             private Vector2 _lastPos;
 
-            //private Player _player;
-            private Game _game;
+            private Game _game1;
+            private Game _game2;
 
             private TextSurface _textSurface;
 
@@ -125,9 +127,10 @@ namespace Main
             {
                 base.OnLoad();
 
-                _game = new Game();
+                _game1 = new Game(false);
+                _game2 = new Game(true);
 
-                _cubePositions = _game.Map;
+                _cubePositions = _game1.Map;
 
                 GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
@@ -275,7 +278,6 @@ namespace Main
                         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
                     }),
                 });
-
                 _playCube2 = new Cube(new CubeSurface[]
                 {
                     new CubeSurface (_lightingShader, "Resources/box.png", new float[]
@@ -340,16 +342,13 @@ namespace Main
                     }),
                 });
 
-                _playCube.MainSide = (int)_game.CurrentSide;
+                _playCube1.MainSide = (int)_game1.CurrentSide;
+                _playCube2.MainSide = (int)_game1.FinishSide;
                
             }
 
-            protected override void OnRenderFrame(FrameEventArgs e)
+            public void DrawFloor()
             {
-                base.OnRenderFrame(e);
-
-                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
                 GL.BindVertexArray(_vaoModel);
 
                 _diffuseMap.Use(TextureUnit.Texture0);
@@ -365,14 +364,6 @@ namespace Main
                 _lightingShader.SetInt("material.specular", 1);
                 _lightingShader.SetVector3("material.specular", new Vector3(0.5f, 0.5f, 0.5f));
                 _lightingShader.SetFloat("material.shininess", 32.0f);
-
-                /*
-                   Here we set all the uniforms for the 5/6 types of lights we have. We have to set them manually and index
-                   the proper PointLight struct in the array to set each uniform variable. This can be done more code-friendly
-                   by defining light types as classes and set their values in there, or by using a more efficient uniform approach
-                   by using 'Uniform buffer objects', but that is something we'll discuss in the 'Advanced GLSL' tutorial.
-                */
-                // Directional light
                 _lightingShader.SetVector3("dirLight.direction", new Vector3(-0.2f, -1.0f, -0.3f));
                 _lightingShader.SetVector3("dirLight.ambient", new Vector3(0.05f, 0.05f, 0.05f));
                 _lightingShader.SetVector3("dirLight.diffuse", new Vector3(0.4f, 0.4f, 0.4f));
@@ -390,18 +381,6 @@ namespace Main
                     _lightingShader.SetFloat($"pointLights[{i}].quadratic", 0.032f);
                 }
 
-                /*// Spot light
-                _lightingShader.SetVector3("spotLight.position", _camera.Position);
-                _lightingShader.SetVector3("spotLight.direction", _camera.Front);
-                _lightingShader.SetVector3("spotLight.ambient", new Vector3(0.0f, 0.0f, 0.0f));
-                _lightingShader.SetVector3("spotLight.diffuse", new Vector3(1.0f, 1.0f, 1.0f));
-                _lightingShader.SetVector3("spotLight.specular", new Vector3(1.0f, 1.0f, 1.0f));
-                _lightingShader.SetFloat("spotLight.constant", 1.0f);
-                _lightingShader.SetFloat("spotLight.linear", 0.09f);
-                _lightingShader.SetFloat("spotLight.quadratic", 0.032f);
-                _lightingShader.SetFloat("spotLight.cutOff", MathF.Cos(MathHelper.DegreesToRadians(12.5f)));
-                _lightingShader.SetFloat("spotLight.outerCutOff", MathF.Cos(MathHelper.DegreesToRadians(17.5f)));*/
-
                 for (int i = 0; i < _cubePositions.Length; i++)
                 {
                     Matrix4 model = Matrix4.CreateTranslation(_cubePositions[i]);
@@ -409,7 +388,7 @@ namespace Main
                     //model = model * Matrix4.CreateFromAxisAngle(new Vector3(1.0f, 0.3f, 0.5f), angle);
                     _lightingShader.SetMatrix4("model", model);
 
-                    if (_cubePositions[i] == _game.EndPos)
+                    if (_cubePositions[i] == _game1.EndPos)
                     {
                         _redMap.Use(TextureUnit.Texture0);
                         _redMap.Use(TextureUnit.Texture1);
@@ -420,44 +399,83 @@ namespace Main
                     else
                         GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
                 }
+            }
+
+
+            public bool CheckBidirectionalSearch (double time)
+            {
+                _game1.GetAIFirsNextStep(time);
+                _game2.GetAIFirsNextStep(time);
+
+                if (_game1.CheckBidirSearch(_game2.AIOpenNodes) || _game2.CheckBidirSearch(_game1.AIOpenNodes))
+                {
+                    _game1.CreateAIFinishInfo(true);
+                    _game2.CreateAIFinishInfo(false);
+                    return true;
+                }
+
+                _game1.GetAISecodNextStep();
+                _game2.GetAISecodNextStep();
+
+                return false;
+            }
+
+            protected override void OnRenderFrame(FrameEventArgs e)
+            {
+                base.OnRenderFrame(e);
+
+                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+                DrawFloor();
+
                 // ==================== ОТРИСОВКА ИГРОВОГО КУБИКА ==================== // 
                 {
                     
 
-                    _playCube.Position = _game.PlayerPos;
-                    _playCube.Draw(true);
+                    _playCube1.Position = _game1.PlayerPos;
+                    _playCube2.Position = _game2.PlayerPos;
+                    _playCube1.Draw(true);
+                    _playCube2.Draw(true);
 
                     if (!_freezeResults)
                     {
                         _textSurface.Clear();
-                        _textSurface.AppendText($"Текущее состояние {_game.CurrentState}");
+                        _textSurface.AppendText($"Текущее состояние {_game1.CurrentState}");
                     }
 
-                    if (_game.AIIsWorking)
+                    if (_game1.AIIsWorking && _game2.AIIsWorking)
                     {
-                        _textSurface.AppendText($"Прошедшее время: {_game.AIWorkingTime.ToString("F2")}");
+                        _textSurface.AppendText($"Прошедшее время: {_game1.AIWorkingTime.ToString("F2")}");
 
-                        if (_game.GetAINextStep(e.Time))
+
+                        //_game2.GetAINextStep(e.Time);
+                        if (CheckBidirectionalSearch(e.Time))
                         {
                             _freezeResults = true;
                             _textSurface.Clear();
-                            _textSurface.AppendText($"Текущее состояние {_game.CurrentState}");
-                            _textSurface.AppendText($"Прошедшее время: {_game.AIWorkingTime.ToString("F2")}");
+                            _textSurface.AppendText($"Текущее состояние {_game1.CurrentState}");
+                            _textSurface.AppendText($"Прошедшее время: {_game1.AIWorkingTime.ToString("F2")}");
                             _textSurface.AppendText($"Информация: ");
-                            foreach (var str in _game.AIInfo)
-                                _textSurface.AppendText(str);
+                            foreach (var str in _game1.AIInfo)
+                                _textSurface.AppendText("1: " + str);
+                            foreach (var str in _game2.AIInfo)
+                                _textSurface.AppendText("2: " + str);
 
                             _textSurface.AppendText($"Найденный путь:");
 
-                            foreach (var step in _game.WayToFinish)
-                                _textSurface.AppendText($"{step.dirToThisState} => {step.value}");
+                            foreach (var step in _game1.WayToFinish)
+                                _textSurface.AppendText($"1: {step.dirToThisState} => {step.value}");
+                            _textSurface.AppendText("======================");
+                            foreach (var step in _game2.WayToFinish)
+                                _textSurface.AppendText($"2: {step.dirToThisState} => {step.value}");
 
                             _textSurface.AppendText("Press Y to Restart");
                             _textSurface.AppendText("Press T to StartPose");
                             _textSurface.AppendText("Press R to Replay");
                         }
 
-                        _playCube.MainSide = (int)_game.CurrentSide;
+                        _playCube1.MainSide = (int)_game1.CurrentSide;
+                        _playCube2.MainSide = (int)_game2.CurrentSide;
                     }
                     else if (!_freezeResults) _textSurface.AppendText("Press U to start AI");
 
@@ -467,7 +485,7 @@ namespace Main
                     {
                         if (passed >= waitTime)
                         {
-                            if (_game.WayToFinish.Count == 0)
+                            if (_game1.WayToFinish.Count == 0)
                             {
                                 _isReplay = false;
                                 _replayCounter = 0;
@@ -475,14 +493,14 @@ namespace Main
                             else
                             {
                                 _wayTextSurface.Clear();
-                                for (int i = 0; i < _game.WayToFinish.Count; i++)
+                                for (int i = 0; i < _game1.WayToFinish.Count; i++)
                                 {
-                                    _wayTextSurface.AppendText($"{_game.WayToFinish[i].dirToThisState} => {_game.WayToFinish[i].value}", i == _replayCounter ? Brushes.Yellow : Brushes.Black);
+                                    _wayTextSurface.AppendText($"{_game1.WayToFinish[i].dirToThisState} => {_game1.WayToFinish[i].value}", i == _replayCounter ? Brushes.Yellow : Brushes.Black);
                                 }
 
-                                _playCube.MainSide = _game.MovePlayer(_game.WayToFinish[_replayCounter].value);
+                                _playCube1.MainSide = _game1.MovePlayer(_game1.WayToFinish[_replayCounter].value);
 
-                                if (_replayCounter + 1 == _game.WayToFinish.Count)
+                                if (_replayCounter + 1 == _game1.WayToFinish.Count)
                                 {
                                     _isReplay = false;
                                     _replayCounter = 0;
@@ -526,9 +544,12 @@ namespace Main
 
             void UpdateGameMap(string mapName)
             {
-                _cubePositions = _game.UpdateMap(mapName);
-                _playCube.MainSide = (int)_game.CurrentSide;
-                _playCube.Position = _game.PlayerPos;
+                _cubePositions = _game1.UpdateMap(mapName);
+                _game2.UpdateMap(mapName);
+                _playCube1.MainSide = (int)_game1.CurrentSide;
+                _playCube2.MainSide = (int)_game2.CurrentSide;
+                _playCube1.Position = _game1.PlayerPos;
+                _playCube2.Position = _game2.PlayerPos;
                 _freezeResults = false;
                 _isReplay = false;
                 _replayCounter = 0;
@@ -598,15 +619,16 @@ namespace Main
                 }
                 if (input.IsKeyReleased(Keys.U))
                 {
-                    if (!_freezeResults && !_isReplay && !_game.AIIsWorking)
+                    if (!_freezeResults && !_isReplay && !_game1.AIIsWorking && !_game2.AIIsWorking)
                     {
                         _wayTextSurface.Clear();
-                        _game.StartAI();
+                        _game1.StartAI();
+                        _game2.StartAI();
                     }
                 }
                 if (input.IsKeyReleased(Keys.Y))
                 {
-                    if (_freezeResults && !_isReplay && !_game.AIIsWorking)
+                    if (_freezeResults && !_isReplay && !_game1.AIIsWorking && !_game2.AIIsWorking)
                     {
                         _freezeResults = false;
                         _isReplay = false;
@@ -618,15 +640,17 @@ namespace Main
                 }
                 if (input.IsKeyReleased(Keys.T))
                 {
-                    _playCube.MainSide = _game.MovePlayer(_game.StartState);
+                    _playCube1.MainSide = _game1.MovePlayer(_game1.StartState);
+                    _playCube2.MainSide = _game2.MovePlayer(_game2.StartState);
                 }
                 if (input.IsKeyReleased(Keys.R))
                 {
-                    if (!_game.AIIsWorking)
+                    if (!_game1.AIIsWorking && !_game2.AIIsWorking)
                     {
                         _replayCounter = 0;
                         passed = 0;
-                        _playCube.MainSide = _game.MovePlayer(_game.StartState);
+                        _playCube1.MainSide = _game1.MovePlayer(_game1.StartState);
+                        _playCube2.MainSide = _game2.MovePlayer(_game2.StartState);
                         _isReplay = true;
                     }
                     
@@ -638,23 +662,23 @@ namespace Main
                     _camera.Yaw = 270.59592f;
                 }
                 // ========== ДВИЖЕНИЕ КУБИКА ========== //
-                if (!_game.AIIsWorking && !_isReplay)
+                if (!_game1.AIIsWorking && !_game2.AIIsWorking && !_isReplay)
                 {
                     if (input.IsKeyReleased(Keys.Left))
                     {
-                        _playCube.MainSide = _game.MovePlayer(Direction.LEFT);
+                        _playCube1.MainSide = _game1.MovePlayer(Direction.LEFT);
                     }
                     if (input.IsKeyReleased(Keys.Right))
                     {
-                        _playCube.MainSide = _game.MovePlayer(Direction.RIGHT);
+                        _playCube1.MainSide = _game1.MovePlayer(Direction.RIGHT);
                     }
                     if (input.IsKeyReleased(Keys.Up))
                     {
-                        _playCube.MainSide = _game.MovePlayer(Direction.UP);
+                        _playCube1.MainSide = _game1.MovePlayer(Direction.UP);
                     }
                     if (input.IsKeyReleased(Keys.Down))
                     {
-                        _playCube.MainSide = _game.MovePlayer(Direction.DOWN);
+                        _playCube1.MainSide = _game1.MovePlayer(Direction.DOWN);
                     }
                 }
                 

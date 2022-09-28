@@ -21,9 +21,11 @@ namespace Logic
         public Side StartSide => _startSide;
         private Side _endSide = Side.DOWN;
         public Side EndSide => _endSide;
+        private bool _reverse;
 
-        public Map()
+        public Map(bool reverse)
         {
+            _reverse = reverse;
             this.Update(_defaultMap);
         }
 
@@ -31,6 +33,17 @@ namespace Logic
         {
             UpdateIntMap(path);
             UpdateVecMap();
+            if (_reverse)
+            {
+                var tmpStart = _startPos;
+                tmpStart.Y -= 1.0f;
+                _startPos = _endPos;
+                _startPos.Y += 1.0f;
+                _endPos = tmpStart;
+                var tmpSide = _startSide;
+                _startSide = _endSide;
+                _endSide = tmpSide;
+            }
         }
 
         private void UpdateIntMap(string Path)
@@ -201,6 +214,8 @@ namespace Logic
 
         private Queue<Node> O = new Queue<Node>();
 
+        public Queue<Node> OpenNodes => O;
+
         private Dictionary<string, State> C = new Dictionary<string, State>();
 
         private bool isFinish(State state) => state == _finishState;
@@ -214,6 +229,8 @@ namespace Logic
         private List<Node> _wayToFinish = new List<Node>();
 
         public List<Node> WayToFinish => _wayToFinish;
+
+        public Node currentNode = null;
 
         private List<string> _AIInfo = new List<string>();
 
@@ -246,7 +263,32 @@ namespace Logic
             _isWorking = true;
         }
 
-        public bool Work(double time)
+        
+
+        public void CreateFinishInfo(bool reverseWay)
+        {
+            while (currentNode != null)
+            {
+                _wayToFinish.Add(currentNode);
+                currentNode = currentNode.parent;
+            }
+
+            if (reverseWay)
+            {
+                _wayToFinish.Reverse();
+                _wayToFinish.Remove(_wayToFinish.First());
+            }
+            else _wayToFinish.Remove(_wayToFinish.Last());
+            _AIInfo.Add($"Количество итераций цикла поиска: {_iterationCounter}");
+            _AIInfo.Add($"Максимальное количество узлов в списке O: {_maxOCount}");
+            _AIInfo.Add($"Количество узлов в списке O в конце поиска: {O.Count}");
+            _AIInfo.Add($"Максимальное количество хранимых в памяти узлов: {_maxOAndCCount}");
+
+
+            _isWorking = false;
+        }
+
+        public void WorkFirstStep(double time)
         {
             timer += time;
             _iterationCounter++;
@@ -257,37 +299,26 @@ namespace Logic
             if (_maxOAndCCount < O.Count + C.Count)
                 _maxOAndCCount = O.Count + C.Count;
 
-            var node = O.Dequeue();
+            currentNode = O.Dequeue();
 
-            _game.MovePlayer(node.value);
-
-            if (isFinish(CurrentState))
-            {
-                while (node != null)
-                {
-                    _wayToFinish.Add(node);
-                    node = node.parent;
-                }
-
-                _wayToFinish.Reverse();
-                _wayToFinish.Remove(_wayToFinish.First());
-
-                _AIInfo.Add($"Количество итераций цикла поиска: {_iterationCounter}");
-                _AIInfo.Add($"Максимальное количество узлов в списке O: {_maxOCount}");
-                _AIInfo.Add($"Количество узлов в списке O в конце поиска: {O.Count}");
-                _AIInfo.Add($"Максимальное количество хранимых в памяти узлов: {_maxOAndCCount}");
+            _game.MovePlayer(currentNode.value);
 
 
-                _isWorking = false;
-                return true;
-            }
+        }
 
+        public bool CheckBS(Queue<Node> otherO)
+        {
+            return otherO.Any(x => x.value == currentNode.value);
+        }
+
+        public void WorkSecondStep()
+        {
             foreach (Direction dir in Enum.GetValues(typeof(Direction)))
             {
                 var possibleState = _game.CanMove(dir);
                 if (possibleState != null && !C.ContainsKey(possibleState.ToString()))
                 {
-                    O.Enqueue(new Node { value = possibleState, parent = node, dirToThisState = dir });
+                    O.Enqueue(new Node { value = possibleState, parent = currentNode, dirToThisState = dir });
                 }
             }
             C[CurrentState.ToString()] = CurrentState;
@@ -297,10 +328,7 @@ namespace Logic
                 _wayToFinish.Clear();
                 _AIInfo.Add("Решений нет");
                 _isWorking = false;
-                return true;
             }
-
-            return false;
         }
     }
 
@@ -310,9 +338,9 @@ namespace Logic
         private Player _player;
         private AI _AI;
 
-        public Game()
+        public Game(bool reverse)
         {
-            _gameMap = new Map();
+            _gameMap = new Map(reverse);
             _player = new Player();
             _AI = new AI(this);
             _player._mapSize = _gameMap.IntMap.Count;
@@ -353,6 +381,8 @@ namespace Logic
         }
 
         public Side CurrentSide => _player._playerSide;
+
+        public Side FinishSide => _gameMap.EndSide;
 
         public Vector3[] Map => _gameMap.VectorMap;
 
@@ -479,15 +509,16 @@ namespace Logic
 
         public List<string> AIInfo => _AI.AIInfo;
 
-        public bool GetAINextStep(double time) => _AI.Work(time);
+
+        public void GetAIFirsNextStep(double time) => _AI.WorkFirstStep(time);
+        public bool CheckBidirSearch(Queue<Node> otherO) => _AI.CheckBS(otherO);
+        public void GetAISecodNextStep() => _AI.WorkSecondStep();
 
         public double AIWorkingTime => _AI.WorkingTime;
 
-        public int ReplayStep(int currentStep)
-        {
-            return 0;
-        }
+        public Queue<Node> AIOpenNodes => _AI.OpenNodes;
 
+        public void CreateAIFinishInfo(bool reverseWay) => _AI.CreateFinishInfo(reverseWay);
     }
 
 }
