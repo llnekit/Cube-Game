@@ -325,7 +325,7 @@ namespace Main
                     _lightingShader.SetFloat($"pointLights[{i}].quadratic", 0.032f);
                 }
 
-                // Spot light
+                /*// Spot light
                 _lightingShader.SetVector3("spotLight.position", _camera.Position);
                 _lightingShader.SetVector3("spotLight.direction", _camera.Front);
                 _lightingShader.SetVector3("spotLight.ambient", new Vector3(0.0f, 0.0f, 0.0f));
@@ -335,7 +335,7 @@ namespace Main
                 _lightingShader.SetFloat("spotLight.linear", 0.09f);
                 _lightingShader.SetFloat("spotLight.quadratic", 0.032f);
                 _lightingShader.SetFloat("spotLight.cutOff", MathF.Cos(MathHelper.DegreesToRadians(12.5f)));
-                _lightingShader.SetFloat("spotLight.outerCutOff", MathF.Cos(MathHelper.DegreesToRadians(17.5f)));
+                _lightingShader.SetFloat("spotLight.outerCutOff", MathF.Cos(MathHelper.DegreesToRadians(17.5f)));*/
 
                 for (int i = 0; i < _cubePositions.Length; i++)
                 {
@@ -459,6 +459,19 @@ namespace Main
                 SwapBuffers();
             }
 
+            void UpdateGameMap(string mapName)
+            {
+                _cubePositions = _game.UpdateMap(mapName);
+                _playCube.MainSide = (int)_game.CurrentSide;
+                _playCube.Position = _game.PlayerPos;
+                _freezeResults = false;
+                _isReplay = false;
+                _replayCounter = 0;
+                passed = 0;
+                _wayTextSurface.Clear();
+                _textSurface.Clear();
+            }
+
             protected override void OnUpdateFrame(FrameEventArgs e)
             {
                 base.OnUpdateFrame(e);
@@ -504,25 +517,15 @@ namespace Main
                 }
                 if (input.IsKeyReleased(Keys.F1))
                 {
-                    _cubePositions = _game.UpdateMap("map1.txt");
-                    _playCube.MainSide = (int)_game.CurrentSide;
-                    _freezeResults = false;
-                    _isReplay = false;
-                    _replayCounter = 0;
-                    passed = 0;
-                    _wayTextSurface.Clear();
-                    _textSurface.Clear();
+                    UpdateGameMap("default.txt");
                 }
                 if (input.IsKeyReleased(Keys.F2))
                 {
-                    _cubePositions = _game.UpdateMap("map2.txt");
-                    _playCube.MainSide = (int)_game.CurrentSide;
-                    _freezeResults = false;
-                    _isReplay = false;
-                    _replayCounter = 0;
-                    passed = 0;
-                    _wayTextSurface.Clear();
-                    _textSurface.Clear();
+                    UpdateGameMap("map1.txt");
+                }
+                if (input.IsKeyReleased(Keys.F3))
+                {
+                    UpdateGameMap("map2.txt");
                 }
                 if (input.IsKeyReleased(Keys.P))
                 {
@@ -565,10 +568,9 @@ namespace Main
                 }
                 if (input.IsKeyReleased(Keys.O))
                 {
-                    _camera.Position = new Vector3(-0.79603446f, 2.5668375f, 0.058202386f);
-                    _camera.Pitch = -52.00021f;
-                    _camera.Yaw = 28.80182f;
-                    
+                    _camera.Position = new Vector3(1.0343208f, 3.559164f, 3.573409f);
+                    _camera.Pitch = -46.798386f;
+                    _camera.Yaw = 270.59592f;
                 }
                 // ========== ДВИЖЕНИЕ КУБИКА ========== //
                 if (!_game.AIIsWorking && !_isReplay)
@@ -634,7 +636,7 @@ namespace Main
             GameWindowSettings gameWindowSettings = new GameWindowSettings();
             NativeWindowSettings nativeWindowSettings = new NativeWindowSettings
             {
-                Title = "TEST",
+                Title = "AI LAB 1",
                 Size = new Vector2i(WIDTH, HEIGHT)
             };
 

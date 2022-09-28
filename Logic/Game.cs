@@ -10,19 +10,25 @@ namespace Logic
     internal class Map
     {
         private List<List<int>> _map;
+        private Vector3[] _vecMap;
 
         private readonly string _defaultPath = "Map/";
-        private readonly string _defaultMap = "defaultMap.txt";
+        private readonly string _defaultMap = "default.txt";
         public Vector3 _startPos;
         public Vector3 _endPos;
 
         public Map()
         {
             this.Update(_defaultMap);
-            this.GetMap();
         }
 
-        public void Update(string Path)
+        public void Update (string path)
+        {
+            UpdateIntMap(path);
+            UpdateVecMap();
+        }
+
+        private void UpdateIntMap(string Path)
         {
             var newMap = new List<List<int>>();
             try
@@ -62,7 +68,7 @@ namespace Logic
             return _map[_map.Count - y - 1][x];
         }
 
-        public Vector3[] GetMap()
+        private void UpdateVecMap()
         {
             var list = new List<Vector3>();
 
@@ -82,11 +88,56 @@ namespace Logic
                         if (_map[i][j] == 2 && !hasStart)
                         {
                             hasStart = true;
-                            //_startPos3D = new Vector3((float)j, 1.0f, (float)i);
                             _startPos = new Vector3((float)j, 1.0f, (float)i);
-                            //list.Add(_startPos);
                             list.Add(new Vector3((float)j, 0.0f, (float)i));
+                        }
+                        if (_map[i][j] == 3 && !hasEnd)
+                        {
+                            hasEnd = true;
+                            //_endPos3D = new Vector3((float)j, 0.0f, (float)i);
+                            _endPos = new Vector3((float)j, 0.0f, (float)i);
+                            list.Add(_endPos);
 
+                        }
+                    }
+                }
+
+                if (!hasStart) throw new Exception("Не найден старт");
+                if (!hasEnd) throw new Exception("Не найден финиш");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при получении карты: {ex.Message}");
+            }
+
+
+            _vecMap = list.ToArray();
+        }
+
+        public Vector3[] VectorMap => _vecMap;
+
+        /*public Vector3[] GetMap()
+        {
+            var list = new List<Vector3>();
+
+            bool hasStart = false;
+            bool hasEnd = false;
+
+            try
+            {
+                for (int i = 0; i < _map.Count; i++)
+                {
+                    for (int j = 0; j < _map[i].Count; j++)
+                    {
+                        if (_map[i][j] == 1)
+                        {
+                            list.Add(new Vector3((float)j, 0.0f, (float)i));
+                        }
+                        if (_map[i][j] == 2 && !hasStart)
+                        {
+                            hasStart = true;
+                            _startPos = new Vector3((float)j, 1.0f, (float)i);
+                            list.Add(new Vector3((float)j, 0.0f, (float)i));
                         }
                         if (_map[i][j] == 3 && !hasEnd)
                         {
@@ -109,7 +160,7 @@ namespace Logic
 
             
             return list.ToArray();
-        }
+        }*/
 
     }
 
@@ -334,12 +385,12 @@ namespace Logic
             _player._position.Y += 0.1f;
             _player._playerSide = startSide;
             UpdateAIStates();
-            return _gameMap.GetMap();
+            return _gameMap.VectorMap;
         }
 
         public Side CurrentSide => _player._playerSide;
 
-        public Vector3[] Map => _gameMap.GetMap();
+        public Vector3[] Map => _gameMap.VectorMap;
 
         public State CurrentState => _AI.CurrentState;
 
