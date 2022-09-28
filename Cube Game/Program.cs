@@ -407,7 +407,9 @@ namespace Main
                 _game1.GetAIFirsNextStep(time);
                 _game2.GetAIFirsNextStep(time);
 
-                if (_game1.CheckBidirSearch(_game2.AIOpenNodes) || _game2.CheckBidirSearch(_game1.AIOpenNodes))
+                
+
+                if (_game1.CheckBidirSearch(_game2.AI) || _game2.CheckBidirSearch(_game1.AI))
                 {
                     _game1.CreateAIFinishInfo(true);
                     _game2.CreateAIFinishInfo(false);

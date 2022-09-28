@@ -191,7 +191,7 @@ namespace Logic
         public Direction dirToThisState;
     }
 
-    internal class AI
+    public class AI
     {
 
         private readonly Game _game;
@@ -263,7 +263,17 @@ namespace Logic
             _isWorking = true;
         }
 
-        
+        private Direction Invert(Direction src)
+        {
+            switch (src)
+            {
+                case Direction.LEFT: return Direction.RIGHT;
+                case Direction.RIGHT: return Direction.LEFT;
+                case Direction.UP: return Direction.DOWN;
+                case Direction.DOWN: return Direction.UP;
+            }
+            return src;
+        }
 
         public void CreateFinishInfo(bool reverseWay)
         {
@@ -278,7 +288,13 @@ namespace Logic
                 _wayToFinish.Reverse();
                 _wayToFinish.Remove(_wayToFinish.First());
             }
-            else _wayToFinish.Remove(_wayToFinish.Last());
+            else
+            {
+                foreach (var item in _wayToFinish)
+                    item.dirToThisState = this.Invert(item.dirToThisState);
+                _wayToFinish.Remove(_wayToFinish.Last());
+            }
+            
             _AIInfo.Add($"Количество итераций цикла поиска: {_iterationCounter}");
             _AIInfo.Add($"Максимальное количество узлов в списке O: {_maxOCount}");
             _AIInfo.Add($"Количество узлов в списке O в конце поиска: {O.Count}");
@@ -306,9 +322,15 @@ namespace Logic
 
         }
 
-        public bool CheckBS(Queue<Node> otherO)
+        public bool CheckBS(AI otherAI)
         {
-            return otherO.Any(x => x.value == currentNode.value);
+            var tmp = otherAI.O.Where(x => x.value == currentNode.value).FirstOrDefault();
+            if (tmp != null)
+            {
+                otherAI.currentNode = tmp;
+                return true;
+            }
+            return false;
         }
 
         public void WorkSecondStep()
@@ -511,14 +533,19 @@ namespace Logic
 
 
         public void GetAIFirsNextStep(double time) => _AI.WorkFirstStep(time);
-        public bool CheckBidirSearch(Queue<Node> otherO) => _AI.CheckBS(otherO);
+        public bool CheckBidirSearch(AI otherAI) => _AI.CheckBS(otherAI);
+
+
         public void GetAISecodNextStep() => _AI.WorkSecondStep();
 
         public double AIWorkingTime => _AI.WorkingTime;
 
         public Queue<Node> AIOpenNodes => _AI.OpenNodes;
+        public AI AI=> _AI;
 
         public void CreateAIFinishInfo(bool reverseWay) => _AI.CreateFinishInfo(reverseWay);
+
+        
     }
 
 }
