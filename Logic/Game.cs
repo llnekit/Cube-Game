@@ -16,7 +16,10 @@ namespace Logic
         private readonly string _defaultMap = "default.txt";
         public Vector3 _startPos;
         public Vector3 _endPos;
-
+        private Side _startSide = Side.LEFT;
+        public Side StartSide => _startSide;
+        private Side _endSide = Side.DOWN;
+        public Side EndSide => _endSide;
         public Map()
         {
             this.Update(_defaultMap);
@@ -35,6 +38,12 @@ namespace Logic
             {
                 using (StreamReader reader = new StreamReader(_defaultPath + Path))
                 {
+                    var startSideFromFile = reader.ReadLine();
+                    if (startSideFromFile != null && startSideFromFile.Length == 1) _startSide = (Side)int.Parse(startSideFromFile);
+
+                    var endSideFromFile = reader.ReadLine();
+                    if (endSideFromFile != null && endSideFromFile.Length == 1) _endSide = (Side)int.Parse(endSideFromFile);
+
                     string text = reader.ReadToEnd();
 
                     var rows = text.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
@@ -344,7 +353,6 @@ namespace Logic
         private Map _gameMap;
         private Player _player;
         private AI _AI;
-        private readonly Side startSide = Side.LEFT;
 
         public Game()
         {
@@ -354,13 +362,13 @@ namespace Logic
             _player._mapSize = _gameMap.IntMap.Count;
             _player._position = _gameMap._startPos;
             _player._position.Y += 0.1f;
-            _player._playerSide = startSide;
+            _player._playerSide = _gameMap.StartSide;
             UpdateAIStates();
         }
 
         public void UpdateAIStates()
         {
-            var startState = new State 
+            var startState = new State
             {
                 X = (int)_player._position.X,
                 Y = _player._mapSize - (int)_player._position.Z - 1,
@@ -371,7 +379,7 @@ namespace Logic
             {
                 X = (int)_gameMap._endPos.X,
                 Y = _player._mapSize - (int)_gameMap._endPos.Z - 1,
-                Side = Side.DOWN
+                Side = _gameMap.EndSide
             };
 
             _AI.UpdateStates(startState, endState);
@@ -383,7 +391,7 @@ namespace Logic
             _player._mapSize = _gameMap.IntMap.Count;
             _player._position = _gameMap._startPos;
             _player._position.Y += 0.1f;
-            _player._playerSide = startSide;
+            _player._playerSide = _gameMap.StartSide;
             UpdateAIStates();
             return _gameMap.VectorMap;
         }
