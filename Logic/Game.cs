@@ -17,12 +17,17 @@ namespace Logic
         public Vector3 _startPos;
         public Vector3 _endPos;
 
+        private Side _startSide = Side.LEFT;
+        public Side StartSide => _startSide;
+        private Side _endSide = Side.DOWN;
+        public Side EndSide => _endSide;
+
         public Map()
         {
             this.Update(_defaultMap);
         }
 
-        public void Update (string path)
+        public void Update(string path)
         {
             UpdateIntMap(path);
             UpdateVecMap();
@@ -35,6 +40,12 @@ namespace Logic
             {
                 using (StreamReader reader = new StreamReader(_defaultPath + Path))
                 {
+                    var startSideFromFile = reader.ReadLine();
+                    if (startSideFromFile != null && startSideFromFile.Length == 1) _startSide = (Side)int.Parse(startSideFromFile);
+
+                    var endSideFromFile = reader.ReadLine();
+                    if (endSideFromFile != null && endSideFromFile.Length == 1) _endSide = (Side)int.Parse(endSideFromFile);
+
                     string text = reader.ReadToEnd();
 
                     var rows = text.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
@@ -58,7 +69,7 @@ namespace Logic
             {
                 Console.WriteLine($"Ошибка при обновлении карты {ex.Message}");
             }
-            
+
         }
 
         internal List<List<int>> IntMap => _map;
@@ -116,57 +127,11 @@ namespace Logic
 
         public Vector3[] VectorMap => _vecMap;
 
-        /*public Vector3[] GetMap()
-        {
-            var list = new List<Vector3>();
-
-            bool hasStart = false;
-            bool hasEnd = false;
-
-            try
-            {
-                for (int i = 0; i < _map.Count; i++)
-                {
-                    for (int j = 0; j < _map[i].Count; j++)
-                    {
-                        if (_map[i][j] == 1)
-                        {
-                            list.Add(new Vector3((float)j, 0.0f, (float)i));
-                        }
-                        if (_map[i][j] == 2 && !hasStart)
-                        {
-                            hasStart = true;
-                            _startPos = new Vector3((float)j, 1.0f, (float)i);
-                            list.Add(new Vector3((float)j, 0.0f, (float)i));
-                        }
-                        if (_map[i][j] == 3 && !hasEnd)
-                        {
-                            hasEnd = true;
-                            //_endPos3D = new Vector3((float)j, 0.0f, (float)i);
-                            _endPos = new Vector3((float)j, 0.0f, (float)i);
-                            list.Add(_endPos);
-
-                        }
-                    }
-                }
-
-                if (!hasStart) throw new Exception("Не найден старт");
-                if (!hasEnd) throw new Exception("Не найден финиш");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка при получении карты: {ex.Message}");
-            }
-
-            
-            return list.ToArray();
-        }*/
-
     }
 
     public enum Direction { LEFT, RIGHT, UP, DOWN }
 
-    public enum Side { FORWARD, BACK, LEFT, RIGHT, DOWN, UP}
+    public enum Side { FORWARD, BACK, LEFT, RIGHT, DOWN, UP }
 
     public class State
     {
@@ -175,7 +140,7 @@ namespace Logic
 
         public State() { }
 
-        public State (State state) { X = state.X; Y = state.Y; Side = state.Side; }
+        public State(State state) { X = state.X; Y = state.Y; Side = state.Side; }
 
         public override string ToString()
         {
@@ -203,7 +168,7 @@ namespace Logic
             _position.Z = _mapSize - state.Y - 1;
             _playerSide = state.Side;
         }
-        
+
     }
 
     public class Node
@@ -215,39 +180,30 @@ namespace Logic
 
     internal class AI
     {
-        
+
         private readonly Game _game;
 
         private bool _isWorking = false;
 
         public bool IsWorking => _isWorking;
 
-        private State _start1;
-        private State _start2;
+        private State _start;
 
-        public State StartState1 => _start1;
-        public State StartState2 => _start2;
+        public State StartState => _start;
 
-        private State _finishState1;
-        private State _finishState2;
+        private State _finishState;
 
-        public State FinishState1 => _finishState1;
-        public State FinishState2 => _finishState2;
+        public State FinishState => _finishState;
 
-        private State _currentState1;
-        private State _currentState2;
+        private State _currentState;
 
-        public State CurrentState1 { get { return _currentState1; } set { _currentState1 = value; } }
-        public State CurrentState2 { get { return _currentState2; } set { _currentState2 = value; } }
-            
-        private Queue<Node> O1 = new Queue<Node>();
-        private Queue<Node> O2 = new Queue<Node>();
+        public State CurrentState { get { return _currentState; } set { _currentState = value; } }
 
-        private Dictionary<string, State> C1 = new Dictionary<string, State>();
-        private Dictionary<string, State> C2 = new Dictionary<string, State>();
+        private Queue<Node> O = new Queue<Node>();
 
-        private bool isFinish1(State state) => state == _finishState1;
-        private bool isFinish2(State state) => state == _finishState2;
+        private Dictionary<string, State> C = new Dictionary<string, State>();
+
+        private bool isFinish(State state) => state == _finishState;
 
         private double timer = 0;
 
@@ -255,11 +211,9 @@ namespace Logic
 
         public AI(Game game) => _game = game;
 
-        private List<Node> _wayToFinish1 = new List<Node>();
-        private List<Node> _wayToFinish2 = new List<Node>();
+        private List<Node> _wayToFinish = new List<Node>();
 
-        public List<Node> WayToFinish1 => _wayToFinish1;
-        public List<Node> WayToFinish2 => _wayToFinish2;
+        public List<Node> WayToFinish => _wayToFinish;
 
         private List<string> _AIInfo = new List<string>();
 
@@ -273,24 +227,17 @@ namespace Logic
 
         public void UpdateStates(State startState, State finishState)
         {
-            O1.Clear();
-            O2.Clear();
-            C1.Clear();
-            C2.Clear();
+            O.Clear();
+            C.Clear();
             _AIInfo.Clear();
             _wayToFinish.Clear();
             _iterationCounter = 0;
             _maxOCount = 0;
             _maxOAndCCount = 0;
-            _start1 = startState;
-            _finishState1 = finishState;
-            _start2 = finishState;
-            _finishState2 = startState;
-            _currentState1 = _start1;
-            _currentState2 = _start2;
-            O1.Enqueue(new Node { value = startState, parent = null });
-            O2.Enqueue(new Node { value = finishState, parent = null });
-            
+            _start = startState;
+            _currentState = _start;
+            O.Enqueue(new Node { value = startState, parent = null });
+            _finishState = finishState;
         }
 
         public void Start()
@@ -321,7 +268,7 @@ namespace Logic
                     _wayToFinish.Add(node);
                     node = node.parent;
                 }
-                
+
                 _wayToFinish.Reverse();
                 _wayToFinish.Remove(_wayToFinish.First());
 
@@ -329,7 +276,7 @@ namespace Logic
                 _AIInfo.Add($"Максимальное количество узлов в списке O: {_maxOCount}");
                 _AIInfo.Add($"Количество узлов в списке O в конце поиска: {O.Count}");
                 _AIInfo.Add($"Максимальное количество хранимых в памяти узлов: {_maxOAndCCount}");
-                
+
 
                 _isWorking = false;
                 return true;
@@ -360,34 +307,24 @@ namespace Logic
     public class Game
     {
         private Map _gameMap;
-        private Player _player1;
-        private Player _player2;
+        private Player _player;
         private AI _AI;
-        private readonly Side startSide = Side.LEFT;
 
         public Game()
         {
             _gameMap = new Map();
-            _player1 = new Player();
-            _player2 = new Player();
+            _player = new Player();
             _AI = new AI(this);
-
-            _player1._mapSize = _gameMap.IntMap.Count;
-            _player1._position = _gameMap._startPos;
-            _player1._position.Y += 0.1f;
-            _player1._playerSide = startSide;
-
-            _player2._mapSize = _gameMap.IntMap.Count;
-            _player2._position = _gameMap._endPos;
-            _player2._position.Y += 0.1f;
-            _player2._playerSide = Side.DOWN;
-
+            _player._mapSize = _gameMap.IntMap.Count;
+            _player._position = _gameMap._startPos;
+            _player._position.Y += 0.1f;
+            _player._playerSide = _gameMap.StartSide;
             UpdateAIStates();
         }
 
         public void UpdateAIStates()
         {
-            var startState = new State 
+            var startState = new State
             {
                 X = (int)_player._position.X,
                 Y = _player._mapSize - (int)_player._position.Z - 1,
@@ -398,7 +335,7 @@ namespace Logic
             {
                 X = (int)_gameMap._endPos.X,
                 Y = _player._mapSize - (int)_gameMap._endPos.Z - 1,
-                Side = Side.DOWN
+                Side = _gameMap.EndSide
             };
 
             _AI.UpdateStates(startState, endState);
@@ -410,7 +347,7 @@ namespace Logic
             _player._mapSize = _gameMap.IntMap.Count;
             _player._position = _gameMap._startPos;
             _player._position.Y += 0.1f;
-            _player._playerSide = startSide;
+            _player._playerSide = _gameMap.StartSide;
             UpdateAIStates();
             return _gameMap.VectorMap;
         }
@@ -443,55 +380,55 @@ namespace Logic
 
             try
             {
-                switch(dir)
+                switch (dir)
                 {
                     case Direction.LEFT:
                         switch (state.Side)
                         {
-                            case Side.LEFT:     state.Side = Side.DOWN; break;
-                            case Side.RIGHT:    state.Side = Side.UP; break;
-                            case Side.FORWARD:  state.Side = Side.FORWARD; break;
-                            case Side.BACK:     state.Side = Side.BACK; break;
-                            case Side.UP:       state.Side = Side.LEFT; break;
-                            case Side.DOWN:     state.Side = Side.RIGHT; break;
+                            case Side.LEFT: state.Side = Side.DOWN; break;
+                            case Side.RIGHT: state.Side = Side.UP; break;
+                            case Side.FORWARD: state.Side = Side.FORWARD; break;
+                            case Side.BACK: state.Side = Side.BACK; break;
+                            case Side.UP: state.Side = Side.LEFT; break;
+                            case Side.DOWN: state.Side = Side.RIGHT; break;
                         }
                         state.X--;
                         break;
                     case Direction.RIGHT:
                         switch (state.Side)
                         {
-                            case Side.LEFT:     state.Side = Side.UP; break;
-                            case Side.RIGHT:    state.Side = Side.DOWN; break;
-                            case Side.FORWARD:  state.Side = Side.FORWARD; break;
-                            case Side.BACK:     state.Side = Side.BACK; break;
-                            case Side.UP:       state.Side = Side.RIGHT; break;
-                            case Side.DOWN:     state.Side = Side.LEFT; break;
+                            case Side.LEFT: state.Side = Side.UP; break;
+                            case Side.RIGHT: state.Side = Side.DOWN; break;
+                            case Side.FORWARD: state.Side = Side.FORWARD; break;
+                            case Side.BACK: state.Side = Side.BACK; break;
+                            case Side.UP: state.Side = Side.RIGHT; break;
+                            case Side.DOWN: state.Side = Side.LEFT; break;
                         }
-                        state.X++; 
+                        state.X++;
                         break;
                     case Direction.UP:
                         switch (state.Side)
                         {
-                            case Side.LEFT:     state.Side = Side.LEFT; break;
-                            case Side.RIGHT:    state.Side = Side.RIGHT; break;
-                            case Side.FORWARD:  state.Side = Side.DOWN; break;
-                            case Side.BACK:     state.Side = Side.UP; break;
-                            case Side.UP:       state.Side = Side.FORWARD; break;
-                            case Side.DOWN:     state.Side = Side.BACK; break;
+                            case Side.LEFT: state.Side = Side.LEFT; break;
+                            case Side.RIGHT: state.Side = Side.RIGHT; break;
+                            case Side.FORWARD: state.Side = Side.DOWN; break;
+                            case Side.BACK: state.Side = Side.UP; break;
+                            case Side.UP: state.Side = Side.FORWARD; break;
+                            case Side.DOWN: state.Side = Side.BACK; break;
                         }
-                        state.Y++; 
+                        state.Y++;
                         break;
                     case Direction.DOWN:
                         switch (state.Side)
                         {
-                            case Side.LEFT:     state.Side = Side.LEFT; break;
-                            case Side.RIGHT:    state.Side = Side.RIGHT; break;
-                            case Side.FORWARD:  state.Side = Side.UP; break;
-                            case Side.BACK:     state.Side = Side.DOWN; break;
-                            case Side.UP:       state.Side = Side.BACK; break;
-                            case Side.DOWN:     state.Side = Side.FORWARD; break;
+                            case Side.LEFT: state.Side = Side.LEFT; break;
+                            case Side.RIGHT: state.Side = Side.RIGHT; break;
+                            case Side.FORWARD: state.Side = Side.UP; break;
+                            case Side.BACK: state.Side = Side.DOWN; break;
+                            case Side.UP: state.Side = Side.BACK; break;
+                            case Side.DOWN: state.Side = Side.FORWARD; break;
                         }
-                        state.Y--; 
+                        state.Y--;
                         break;
                 }
 
@@ -525,7 +462,7 @@ namespace Logic
             return (int)_player._playerSide;
         }
 
-        public int MovePlayer(Direction dir) 
+        public int MovePlayer(Direction dir)
         {
             var newState = CanMove(dir);
 
@@ -552,5 +489,5 @@ namespace Logic
         }
 
     }
-    
+
 }
