@@ -226,19 +226,25 @@ namespace Logic
 
         public State StartState => _start;
 
-        private State _finishState;
+        private State _finishState1;
+        private State _finishState2;
 
-        public State FinishState => _finishState;
+        public State FinishState1 => _finishState1;
+        public State FinishState2 => _finishState2;
 
-        private State _currentState;
+        private State _currentState1;
+        private State _currentState2;
 
-        public State CurrentState { get { return _currentState; } set { _currentState = value; } }
+        public State CurrentState1 { get { return _currentState1; } set { _currentState1 = value; } }
+        public State CurrentState2 { get { return _currentState2; } set { _currentState2 = value; } }
             
-        private Queue<Node> O = new Queue<Node>();
+        private Queue<Node> O1 = new Queue<Node>();
+        private Queue<Node> O2 = new Queue<Node>();
 
-        private Dictionary<string, State> C = new Dictionary<string, State>();
+        private Dictionary<string, State> C1 = new Dictionary<string, State>();
+        private Dictionary<string, State> C2 = new Dictionary<string, State>();
 
-        private bool isFinish(State state) => state == _finishState;
+        private bool isFinish1(State state) => state == _finishState1;
 
         private double timer = 0;
 
@@ -342,19 +348,28 @@ namespace Logic
     public class Game
     {
         private Map _gameMap;
-        private Player _player;
+        private Player _player1;
+        private Player _player2;
         private AI _AI;
         private readonly Side startSide = Side.LEFT;
 
         public Game()
         {
             _gameMap = new Map();
-            _player = new Player();
+            _player1 = new Player();
+            _player2 = new Player();
             _AI = new AI(this);
-            _player._mapSize = _gameMap.IntMap.Count;
-            _player._position = _gameMap._startPos;
-            _player._position.Y += 0.1f;
-            _player._playerSide = startSide;
+
+            _player1._mapSize = _gameMap.IntMap.Count;
+            _player1._position = _gameMap._startPos;
+            _player1._position.Y += 0.1f;
+            _player1._playerSide = startSide;
+
+            _player2._mapSize = _gameMap.IntMap.Count;
+            _player2._position = _gameMap._endPos;
+            _player2._position.Y += 0.1f;
+            _player2._playerSide = Side.DOWN;
+
             UpdateAIStates();
         }
 
