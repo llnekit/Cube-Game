@@ -499,7 +499,7 @@ namespace Main
                             foreach (var str in _game1.AIInfo)
                                 _textSurface.AppendText(str);
 
-                            _textSurface.AppendText($"Найденный путь:");
+                            _textSurface.AppendText($"Найденный путь (Длина = {_game1.WayToFinish.Count()}):");
 
                             foreach (var step in _game1.WayToFinish)
                                 _textSurface.AppendText($"{step.dirToThisState} => {step.value}");
@@ -514,7 +514,7 @@ namespace Main
                             foreach (var str in _game2.AIInfo)
                                 _textSurface2.AppendText(str);
 
-                            _textSurface2.AppendText($"Найденный путь:");
+                            _textSurface2.AppendText($"Найденный путь (Длина = {_game2.WayToFinish.Count()}):");
 
                             foreach (var step in _game2.WayToFinish)
                                 _textSurface2.AppendText($"{step.dirToThisState} => {step.value}");
@@ -523,7 +523,7 @@ namespace Main
 
                             foreach(var item in UnitedInfo)
                                 _unitedData.AppendText(item);
-                            _unitedData.AppendText("Полный путь:");
+                            _unitedData.AppendText($"Полный путь (Длина = {_game1.WayToFinish.Count + _game2.WayToFinish.Count}):");
 
                             foreach (var step in _game1.WayToFinish)
                                 _unitedData.AppendText($"{step.dirToThisState} => {step.value}");
