@@ -382,7 +382,7 @@ namespace Main
                             foreach (var str in _game.AIInfo)
                                 _textSurface.AppendText(str);
 
-                            _textSurface.AppendText($"Найденный путь:");
+                            _textSurface.AppendText($"Найденный путь (Длина = {_game.WayToFinish.Count()}):");
 
                             foreach (var step in _game.WayToFinish)
                                 _textSurface.AppendText($"{step.dirToThisState} => {step.value}");
