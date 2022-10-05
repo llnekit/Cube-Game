@@ -104,8 +104,10 @@ namespace Main
             private Game _game2;
 
             private TextSurface _textSurface;
+            private TextSurface _textSurface2;
 
             private TextSurface _wayTextSurface;
+            private TextSurface _unitedData;
 
             private Shader _textShader;
 
@@ -139,7 +141,7 @@ namespace Main
                 // ============= ТЕКСТ ============= // 
 
                 _textShader = new Shader("Shaders/textShader.vert", "Shaders/textShader.frag");
-
+                float offset = 0.0f;
                 _textSurface = new TextSurface(_textShader, "Resources/box.png", new float[]
                 {
                     // Positions          Texture coords
@@ -153,7 +155,7 @@ namespace Main
                 _textSurface.Font = new Font(FontFamily.GenericSansSerif, 14);
                 _textSurface.Brush = Brushes.Black;
 
-                float offset = 1.6f;
+                offset = 1.0f;
                 _wayTextSurface = new TextSurface(_textShader, "Resources/box.png", new float[]
                 {
                     // Positions          Texture coords
@@ -166,6 +168,34 @@ namespace Main
                 });
                 _wayTextSurface.Font = new Font(FontFamily.GenericSansSerif, 14);
                 _wayTextSurface.Brush = Brushes.Green;
+
+                offset = 1.4f;
+                _textSurface2 = new TextSurface(_textShader, "Resources/box.png", new float[]
+                {
+                    // Positions          Texture coords
+                    -1.0f + offset, -1.0f, -1.0f + offset,  0.0f, 0.0f,
+                     0.0f + offset, -1.0f, -1.0f + offset,  1.0f, 0.0f,
+                     0.0f + offset,  1.0f, -1.0f + offset,  1.0f, 1.0f,
+                     0.0f + offset,  1.0f, -1.0f + offset,  1.0f, 1.0f,
+                    -1.0f + offset,  1.0f, -1.0f + offset,  0.0f, 1.0f,
+                    -1.0f + offset, -1.0f, -1.0f + offset,  0.0f, 0.0f,
+                });
+                _textSurface2.Font = new Font(FontFamily.GenericSansSerif, 14);
+                //_textSurface2.Brush = Brushes.Green;
+
+                offset = 0.8f;
+                _unitedData = new TextSurface(_textShader, "Resources/box.png", new float[]
+                {
+                    // Positions          Texture coords
+                    -1.0f + offset, -1.0f, -1.0f + offset,  0.0f, 0.0f,
+                     0.0f + offset, -1.0f, -1.0f + offset,  1.0f, 0.0f,
+                     0.0f + offset,  1.0f, -1.0f + offset,  1.0f, 1.0f,
+                     0.0f + offset,  1.0f, -1.0f + offset,  1.0f, 1.0f,
+                    -1.0f + offset,  1.0f, -1.0f + offset,  0.0f, 1.0f,
+                    -1.0f + offset, -1.0f, -1.0f + offset,  0.0f, 0.0f,
+                });
+                _unitedData.Font = new Font(FontFamily.GenericSansSerif, 14);
+                //_textSurface2.Brush = Brushes.Green;
 
 
                 // ============= ТЕКСТ ============= // 
@@ -413,6 +443,9 @@ namespace Main
                 {
                     _game1.CreateAIFinishInfo(true);
                     _game2.CreateAIFinishInfo(false);
+                    UnitedInfo.Clear();
+                    _unitedData.Clear();
+                    UnitedInfo = _game1.CreateUnitedInfo(_game2.AI);
                     return true;
                 }
 
@@ -422,6 +455,8 @@ namespace Main
                 return false;
             }
 
+            List<string> UnitedInfo = new List<string>();
+            bool displayUnite = true;
             protected override void OnRenderFrame(FrameEventArgs e)
             {
                 base.OnRenderFrame(e);
@@ -442,13 +477,16 @@ namespace Main
                     if (!_freezeResults)
                     {
                         _textSurface.Clear();
+                        _textSurface2.Clear();
                         _textSurface.AppendText($"Текущее состояние {_game1.CurrentState}");
+                        _textSurface2.AppendText($"Текущее состояние {_game2.CurrentState}");
                     }
 
                     if (_game1.AIIsWorking && _game2.AIIsWorking)
                     {
                         _textSurface.AppendText($"Прошедшее время: {_game1.AIWorkingTime.ToString("F2")}");
-
+                        _textSurface2.AppendText($"Прошедшее время: {_game2.AIWorkingTime.ToString("F2")}");
+                        
 
                         //_game2.GetAINextStep(e.Time);
                         if (CheckBidirectionalSearch(e.Time))
@@ -459,17 +497,40 @@ namespace Main
                             _textSurface.AppendText($"Прошедшее время: {_game1.AIWorkingTime.ToString("F2")}");
                             _textSurface.AppendText($"Информация: ");
                             foreach (var str in _game1.AIInfo)
-                                _textSurface.AppendText("1: " + str);
-                            foreach (var str in _game2.AIInfo)
-                                _textSurface.AppendText("2: " + str);
+                                _textSurface.AppendText(str);
 
                             _textSurface.AppendText($"Найденный путь:");
 
                             foreach (var step in _game1.WayToFinish)
-                                _textSurface.AppendText($"1: {step.dirToThisState} => {step.value}");
-                            _textSurface.AppendText("======================");
+                                _textSurface.AppendText($"{step.dirToThisState} => {step.value}");
+
+
+                            ////////////////////////////
+
+                            _textSurface2.Clear();
+                            _textSurface2.AppendText($"Текущее состояние {_game2.CurrentState}");
+                            _textSurface2.AppendText($"Прошедшее время: {_game2.AIWorkingTime.ToString("F2")}");
+                            _textSurface2.AppendText($"Информация: ");
+                            foreach (var str in _game2.AIInfo)
+                                _textSurface2.AppendText(str);
+
+                            _textSurface2.AppendText($"Найденный путь:");
+
                             foreach (var step in _game2.WayToFinish)
-                                _textSurface.AppendText($"2: {step.dirToThisState} => {step.value}");
+                                _textSurface2.AppendText($"{step.dirToThisState} => {step.value}");
+
+                            //////////////////////////////
+
+                            foreach(var item in UnitedInfo)
+                                _unitedData.AppendText(item);
+                            _unitedData.AppendText("Полный путь:");
+
+                            foreach (var step in _game1.WayToFinish)
+                                _unitedData.AppendText($"{step.dirToThisState} => {step.value}");
+                            foreach (var step in _game2.WayToFinish)
+                                _unitedData.AppendText($"{step.dirToThisState} => {step.value}");
+
+
 
                             _textSurface.AppendText("Press Y to Restart");
                             _textSurface.AppendText("Press T to StartPose");
@@ -500,9 +561,16 @@ namespace Main
                                     _wayTextSurface.AppendText($"{_game1.WayToFinish[i].dirToThisState} => {_game1.WayToFinish[i].value}", i == _replayCounter ? Brushes.Yellow : Brushes.Black);
                                 }
 
-                                _playCube1.MainSide = _game1.MovePlayer(_game1.WayToFinish[_replayCounter].value);
+                                for (int i = 0; i < _game2.WayToFinish.Count; i++)
+                                {
+                                    _wayTextSurface.AppendText($"{_game2.WayToFinish[i].dirToThisState} => {_game2.WayToFinish[i].value}", i == _replayCounter - _game1.WayToFinish.Count? Brushes.Yellow : Brushes.Black);
+                                }
+                                if (_replayCounter < _game1.WayToFinish.Count)
+                                    _playCube1.MainSide = _game1.MovePlayer(_game1.WayToFinish[_replayCounter].value);
+                                else
+                                    _playCube2.MainSide = _game2.MovePlayer(_game2.WayToFinish[_replayCounter - _game1.WayToFinish.Count].value);
 
-                                if (_replayCounter + 1 == _game1.WayToFinish.Count)
+                                if (_replayCounter + 1 == _game1.WayToFinish.Count + _game2.WayToFinish.Count)
                                 {
                                     _isReplay = false;
                                     _replayCounter = 0;
@@ -517,7 +585,12 @@ namespace Main
                     else _wayTextSurface.Clear();
 
                     _textShader.Use();
+
+                    _textSurface2.Draw();
+                    if (displayUnite) _unitedData.Draw();
                     _textSurface.Draw();
+                    
+                    
                     _wayTextSurface.Draw();
 
                 }
@@ -615,6 +688,10 @@ namespace Main
                 {
                     UpdateGameMap("map2.txt");
                 }
+                if (input.IsKeyReleased(Keys.V))
+                {
+                    displayUnite = !displayUnite;
+                }
                 if (input.IsKeyReleased(Keys.P))
                 {
                     Console.WriteLine($"Pos = {_camera.Position} Pitch = {_camera.Pitch} Yaw = {_camera.Yaw}");
@@ -637,6 +714,8 @@ namespace Main
                         _replayCounter = 0;
                         passed = 0;
                         _wayTextSurface.Clear();
+                        _unitedData.Clear();
+                        displayUnite = false;
                     }    
                     
                 }

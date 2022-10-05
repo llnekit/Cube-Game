@@ -275,6 +275,17 @@ namespace Logic
             return src;
         }
 
+        public List<string> CreateUnitedInfo (AI otherAI)
+        {
+            return new List<string>
+            {
+                $"Количество итераций цикла поиска: {_iterationCounter + otherAI._iterationCounter}",
+                $"Максимальное количество узлов в списке O: {_maxOCount + otherAI._maxOCount}",
+                $"Количество узлов в списке O в конце поиска: {O.Count + otherAI.O.Count}",
+                $"Максимальное количество хранимых в памяти узлов: {_maxOAndCCount + otherAI._maxOAndCCount}"
+            };
+        }
+
         public void CreateFinishInfo(bool reverseWay)
         {
             while (currentNode != null)
@@ -291,7 +302,10 @@ namespace Logic
             else
             {
                 foreach (var item in _wayToFinish)
+                {
                     item.dirToThisState = this.Invert(item.dirToThisState);
+                    item.value = item.parent == null? null: item.parent.value;
+                }
                 _wayToFinish.Remove(_wayToFinish.Last());
             }
             
@@ -545,6 +559,7 @@ namespace Logic
 
         public void CreateAIFinishInfo(bool reverseWay) => _AI.CreateFinishInfo(reverseWay);
 
+        public List<string> CreateUnitedInfo(AI otherAI) => _AI.CreateUnitedInfo(otherAI);
         
     }
 
