@@ -19,6 +19,7 @@ namespace Main
         // with several point lights
         public class Window : GameWindow
         {
+            #region Переменные
             private readonly float[] _vertices =
             {
                 // Positions          Normals              Texture coords
@@ -120,11 +121,13 @@ namespace Main
             private readonly double waitTime = 2; // в секундах
             private double passed = 0;
 
+            #endregion
+
             public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
                 : base(gameWindowSettings, nativeWindowSettings)
             {
             }
-
+            #region Начальная конфигруация
             protected override void OnLoad()
             {
                 base.OnLoad();
@@ -376,7 +379,6 @@ namespace Main
                 _playCube2.MainSide = (int)_game1.FinishSide;
                
             }
-
             public void DrawFloor()
             {
                 GL.BindVertexArray(_vaoModel);
@@ -430,6 +432,8 @@ namespace Main
                         GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
                 }
             }
+
+            #endregion
 
 
             public bool CheckBidirectionalSearch (double time)
