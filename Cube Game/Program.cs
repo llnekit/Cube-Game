@@ -692,6 +692,10 @@ namespace Main
                 {
                     UpdateGameMap("map2.txt");
                 }
+                if (input.IsKeyReleased(Keys.F4))
+                {
+                    UpdateGameMap("map3.txt");
+                }
                 if (input.IsKeyReleased(Keys.V))
                 {
                     displayUnite = !displayUnite;
