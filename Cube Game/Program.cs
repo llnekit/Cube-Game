@@ -527,6 +527,10 @@ namespace Main
                 {
                     UpdateGameMap("map2.txt");
                 }
+                if (input.IsKeyReleased(Keys.F4))
+                {
+                    UpdateGameMap("map3.txt");
+                }
                 if (input.IsKeyReleased(Keys.P))
                 {
                     Console.WriteLine($"Pos = {_camera.Position} Pitch = {_camera.Pitch} Yaw = {_camera.Yaw}");
