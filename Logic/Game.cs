@@ -218,8 +218,17 @@ namespace Logic
     public class Node
     {
         public State value;
+        public double fx; // f(x)
+        public int gx; // g(x)
+        public double hx; // h(x)
         public Node parent;
         public Direction dirToThisState;
+
+        public override string ToString() => value.ToString();
+
+        public static bool operator ==(Node a, Node b) => a?.value == b?.value;
+
+        public static bool operator !=(Node a, Node b) => !(a?.value == b?.value);
     }
 
     internal class AI
@@ -242,10 +251,12 @@ namespace Logic
         private State _currentState;
 
         public State CurrentState { get { return _currentState; } set { _currentState = value; } }
-            
-        private Queue<Node> O = new Queue<Node>();
 
-        private Dictionary<string, State> C = new Dictionary<string, State>();
+        //private Queue<Node> O = new Queue<Node>();
+
+        private PriorityQueue<Node, double> O = new PriorityQueue<Node, double>();
+
+        private Dictionary<string, Node> C = new Dictionary<string, Node>();
 
         private bool isFinish(State state) => state == _finishState;
 
@@ -279,15 +290,50 @@ namespace Logic
             _maxOCount = 0;
             _maxOAndCCount = 0;
             _start = startState;
-            _currentState = _start;
-            O.Enqueue(new Node { value = startState, parent = null });
             _finishState = finishState;
+            _currentState = _start;
+
+            var node = new Node { value = startState, parent = null, gx = 0 };
+            node.fx = f(node);
+            O.Enqueue(node, node.fx);
+
+           
         }
 
         public void Start()
         {
             timer = 0;
             _isWorking = true;
+        }
+
+        public int SearchMode = 0;
+
+        private int g (Node x) => x.gx;
+
+        private double h1 (Node x)
+        {
+            var wayLenght = Math.Abs(x.value.X - _finishState.X) + Math.Abs(x.value.Y - _finishState.Y);
+            x.hx = wayLenght;
+            return wayLenght;
+        }
+
+        private double h2 (Node x)
+        {
+            var wayLenght = Math.Sqrt((x.value.X - _finishState.X) * ((x.value.X - _finishState.X)) + (x.value.Y - _finishState.Y) * (x.value.Y - _finishState.Y));
+            x.hx = wayLenght;
+            return wayLenght;
+        }
+
+        private double f(Node x)
+        {
+            switch(SearchMode)
+            {
+                case 1: return h1(x);
+                case 2: return g(x) + h1(x);
+                case 3: return h2(x);
+                case 4: return g(x) + h2(x);
+                default:return g(x);
+            }
         }
 
         public bool Work(double time)
@@ -309,6 +355,7 @@ namespace Logic
             {
                 while (node != null)
                 {
+                    if (_wayToFinish.Contains(node)) break;
                     _wayToFinish.Add(node);
                     node = node.parent;
                 }
@@ -329,12 +376,48 @@ namespace Logic
             foreach (Direction dir in Enum.GetValues(typeof(Direction)))
             {
                 var possibleState = _game.CanMove(dir);
-                if (possibleState != null && !C.ContainsKey(possibleState.ToString()))
+                if (possibleState != null)
                 {
-                    O.Enqueue(new Node { value = possibleState, parent = node, dirToThisState = dir });
+                    var tmpNode = new Node { value = possibleState, parent = node, dirToThisState = dir, gx = node.gx + 1 };
+                    tmpNode.fx = f(tmpNode);
+                    // смотрим есть ли такое состояние в списке O
+                    var existInO = O.UnorderedItems.SingleOrDefault(x => x.Element == tmpNode);
+                    if (existInO.Element != null)
+                    {
+                        if (existInO.Priority < tmpNode.fx && SearchMode != 0)
+                        {
+                            existInO.Priority = tmpNode.fx;
+                            //existInO.Element.parent = node;
+                        }
+                    }
+                    else
+                    {
+                        // смотрим есть ли такое состояние в списаке C
+                        var existInC = C.SingleOrDefault(x => x.Value == tmpNode);
+                        if (existInC.Key != null && SearchMode != 0)
+                        {
+                            if (existInC.Value.fx < tmpNode.fx)
+                            {
+                                C.Remove(existInC.Key);
+                                existInC.Value.fx = tmpNode.fx;
+                                //existInC.Value.gx = tmpNode.gx;
+                                existInC.Value.hx = tmpNode.hx;
+
+                                //existInC.Value.parent = node;
+                                O.Enqueue(existInC.Value, existInC.Value.fx);
+                            }
+                        }
+                        else // иначе добавляем в список O
+                        {
+                            O.Enqueue(tmpNode, tmpNode.fx);
+                        }
+                    }
+                    
+                    
+                    
                 }
             }
-            C[CurrentState.ToString()] = CurrentState;
+            C[node.ToString()] = node;
 
             if (O.Count == 0)
             {
@@ -531,6 +614,8 @@ namespace Logic
         {
             return 0;
         }
+
+        public int AISearchMode { get { return _AI.SearchMode;} set { _AI.SearchMode = value; } }
 
     }
     

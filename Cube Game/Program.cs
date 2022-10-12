@@ -114,6 +114,7 @@ namespace Main
             private int _replayCounter = 0;
             private readonly double waitTime = 2; // в секундах
             private double passed = 0;
+            private string currentSearchMode = "g(x)";
 
             public Window(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
                 : base(gameWindowSettings, nativeWindowSettings)
@@ -279,12 +280,8 @@ namespace Main
                
             }
 
-            protected override void OnRenderFrame(FrameEventArgs e)
+            public void DrawFloor()
             {
-                base.OnRenderFrame(e);
-
-                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
                 GL.BindVertexArray(_vaoModel);
 
                 _diffuseMap.Use(TextureUnit.Texture0);
@@ -300,14 +297,6 @@ namespace Main
                 _lightingShader.SetInt("material.specular", 1);
                 _lightingShader.SetVector3("material.specular", new Vector3(0.5f, 0.5f, 0.5f));
                 _lightingShader.SetFloat("material.shininess", 32.0f);
-
-                /*
-                   Here we set all the uniforms for the 5/6 types of lights we have. We have to set them manually and index
-                   the proper PointLight struct in the array to set each uniform variable. This can be done more code-friendly
-                   by defining light types as classes and set their values in there, or by using a more efficient uniform approach
-                   by using 'Uniform buffer objects', but that is something we'll discuss in the 'Advanced GLSL' tutorial.
-                */
-                // Directional light
                 _lightingShader.SetVector3("dirLight.direction", new Vector3(-0.2f, -1.0f, -0.3f));
                 _lightingShader.SetVector3("dirLight.ambient", new Vector3(0.05f, 0.05f, 0.05f));
                 _lightingShader.SetVector3("dirLight.diffuse", new Vector3(0.4f, 0.4f, 0.4f));
@@ -324,18 +313,6 @@ namespace Main
                     _lightingShader.SetFloat($"pointLights[{i}].linear", 0.09f);
                     _lightingShader.SetFloat($"pointLights[{i}].quadratic", 0.032f);
                 }
-
-                /*// Spot light
-                _lightingShader.SetVector3("spotLight.position", _camera.Position);
-                _lightingShader.SetVector3("spotLight.direction", _camera.Front);
-                _lightingShader.SetVector3("spotLight.ambient", new Vector3(0.0f, 0.0f, 0.0f));
-                _lightingShader.SetVector3("spotLight.diffuse", new Vector3(1.0f, 1.0f, 1.0f));
-                _lightingShader.SetVector3("spotLight.specular", new Vector3(1.0f, 1.0f, 1.0f));
-                _lightingShader.SetFloat("spotLight.constant", 1.0f);
-                _lightingShader.SetFloat("spotLight.linear", 0.09f);
-                _lightingShader.SetFloat("spotLight.quadratic", 0.032f);
-                _lightingShader.SetFloat("spotLight.cutOff", MathF.Cos(MathHelper.DegreesToRadians(12.5f)));
-                _lightingShader.SetFloat("spotLight.outerCutOff", MathF.Cos(MathHelper.DegreesToRadians(17.5f)));*/
 
                 for (int i = 0; i < _cubePositions.Length; i++)
                 {
@@ -355,6 +332,18 @@ namespace Main
                     else
                         GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
                 }
+            }
+
+            protected override void OnRenderFrame(FrameEventArgs e)
+            {
+                base.OnRenderFrame(e);
+
+                GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+
+                GL.BindVertexArray(_vaoModel);
+
+                DrawFloor();
+                
                 // ==================== ОТРИСОВКА ИГРОВОГО КУБИКА ==================== // 
                 {
                     
@@ -366,6 +355,7 @@ namespace Main
                     {
                         _textSurface.Clear();
                         _textSurface.AppendText($"Текущее состояние {_game.CurrentState}");
+                        _textSurface.AppendText($"Тип поиска: {currentSearchMode}");
                     }
 
                     if (_game.AIIsWorking)
@@ -377,6 +367,7 @@ namespace Main
                             _freezeResults = true;
                             _textSurface.Clear();
                             _textSurface.AppendText($"Текущее состояние {_game.CurrentState}");
+                            _textSurface.AppendText($"Тип поиска: {currentSearchMode}");
                             _textSurface.AppendText($"Прошедшее время: {_game.AIWorkingTime.ToString("F2")}");
                             _textSurface.AppendText($"Информация: ");
                             foreach (var str in _game.AIInfo)
@@ -385,7 +376,11 @@ namespace Main
                             _textSurface.AppendText($"Найденный путь (Длина = {_game.WayToFinish.Count()}):");
 
                             foreach (var step in _game.WayToFinish)
-                                _textSurface.AppendText($"{step.dirToThisState} => {step.value}");
+                            {
+                                var firstPart = $"{step.dirToThisState} => {step.value}";
+                                var secondPart = $"f(x) = {step.fx.ToString("#.##")}\tg(x) = {step.gx.ToString("#.##")}\th(x) = {(step.hx == 0? "0" : step.hx.ToString("#.##"))}";
+                                _textSurface.AppendText($"{firstPart}\t{secondPart}");
+                            }
 
                             _textSurface.AppendText("Press Y to Restart");
                             _textSurface.AppendText("Press T to StartPose");
@@ -527,6 +522,10 @@ namespace Main
                 {
                     UpdateGameMap("map2.txt");
                 }
+                if (input.IsKeyReleased(Keys.F4))
+                {
+                    UpdateGameMap("map3.txt");
+                }
                 if (input.IsKeyReleased(Keys.P))
                 {
                     Console.WriteLine($"Pos = {_camera.Position} Pitch = {_camera.Pitch} Yaw = {_camera.Yaw}");
@@ -548,8 +547,34 @@ namespace Main
                         _replayCounter = 0;
                         passed = 0;
                         _wayTextSurface.Clear();
+                        _game.WayToFinish.Clear();
                     }    
                     
+                }
+                if (input.IsKeyReleased(Keys.KeyPad0))
+                {
+                    _game.AISearchMode = 0;
+                    currentSearchMode = "g(x)";
+                }
+                if (input.IsKeyReleased(Keys.KeyPad1))
+                {
+                    _game.AISearchMode = 1;
+                    currentSearchMode = "h1(x)";
+                }
+                if (input.IsKeyReleased(Keys.KeyPad2))
+                {
+                    _game.AISearchMode = 2;
+                    currentSearchMode = "g(x) + h1(x)";
+                }
+                if (input.IsKeyReleased(Keys.KeyPad4))
+                {
+                    _game.AISearchMode = 3;
+                    currentSearchMode = "h2(x)";
+                }
+                if (input.IsKeyReleased(Keys.KeyPad5))
+                {
+                    _game.AISearchMode = 4;
+                    currentSearchMode = "g(x) + h2(x)";
                 }
                 if (input.IsKeyReleased(Keys.T))
                 {
