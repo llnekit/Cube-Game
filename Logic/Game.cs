@@ -387,7 +387,6 @@ namespace Logic
                         if (existInO.Priority < tmpNode.fx && SearchMode != 0)
                         {
                             existInO.Priority = tmpNode.fx;
-                            //existInO.Element.parent = node;
                         }
                     }
                     else
@@ -400,10 +399,7 @@ namespace Logic
                             {
                                 C.Remove(existInC.Key);
                                 existInC.Value.fx = tmpNode.fx;
-                                //existInC.Value.gx = tmpNode.gx;
                                 existInC.Value.hx = tmpNode.hx;
-
-                                //existInC.Value.parent = node;
                                 O.Enqueue(existInC.Value, existInC.Value.fx);
                             }
                         }
