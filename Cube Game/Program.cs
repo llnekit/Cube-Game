@@ -559,6 +559,32 @@ namespace Main
                 {
                     _playCube.MainSide = _game.MovePlayer(_game.StartState);
                 }
+                // ================== START STATES ================= //
+                if (input.IsKeyReleased(Keys.D1))
+                {
+                    _playCube.MainSide = _game.MovePlayer(new State { X = _game.FinishState.X, Y = _game.FinishState.Y, Side = Side.LEFT});
+                }
+                if (input.IsKeyReleased(Keys.D2))
+                {
+                    _playCube.MainSide = _game.MovePlayer(new State { X = _game.FinishState.X, Y = _game.FinishState.Y, Side = Side.RIGHT });
+                }
+                if (input.IsKeyReleased(Keys.D3))
+                {
+                    _playCube.MainSide = _game.MovePlayer(new State { X = _game.FinishState.X, Y = _game.FinishState.Y, Side = Side.UP });
+                }
+                if (input.IsKeyReleased(Keys.D4))
+                {
+                    _playCube.MainSide = _game.MovePlayer(new State { X = _game.FinishState.X, Y = _game.FinishState.Y, Side = Side.DOWN });
+                }
+                if (input.IsKeyReleased(Keys.D5))
+                {
+                    _playCube.MainSide = _game.MovePlayer(new State { X = _game.FinishState.X, Y = _game.FinishState.Y, Side = Side.FORWARD });
+                }
+                if (input.IsKeyReleased(Keys.D6))
+                {
+                    _playCube.MainSide = _game.MovePlayer(new State { X = _game.FinishState.X, Y = _game.FinishState.Y, Side = Side.BACK });
+                }
+                // ================== START STATES ================= //
                 if (input.IsKeyReleased(Keys.R))
                 {
                     if (!_game.AIIsWorking)

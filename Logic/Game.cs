@@ -483,6 +483,7 @@ namespace Logic
                         Console.Write(col.ToString() + " ");
                 }
                 Console.WriteLine();*/
+                //return state;
                 var mapValue = _gameMap.getMapValue(state.X, state.Y);
                 //Console.WriteLine($"Желаемые координаты _x = {state.X} _y = {state.Y} map_value = {mapValue}");
                 if (mapValue != 0) return state;
