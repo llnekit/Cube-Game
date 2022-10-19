@@ -337,12 +337,12 @@ namespace Logic
 
             switch(tempState.Side)
             {
-                case Side.RIGHT:    wayLength += 1; break;
-                case Side.LEFT:     wayLength += 1; break;
-                case Side.UP:       wayLength += 1; break;
-                case Side.DOWN:     wayLength += 1; break;
-                case Side.FORWARD:  wayLength += 1; break;
-                case Side.BACK:     wayLength += 1; break;
+                case Side.RIGHT:    wayLength += 1; break;  // 4
+                case Side.LEFT:     wayLength += 1; break;  // 4
+                case Side.UP:       wayLength += 2; break;  // 6
+                case Side.DOWN:     wayLength += 0; break;  // 0
+                case Side.FORWARD:  wayLength += 1; break;  // 4
+                case Side.BACK:     wayLength += 1; break;  // 4
                 
             }
 
@@ -437,7 +437,7 @@ namespace Logic
                     }
                     else
                     {
-                        if (existInO.Element.fx < tmpNode.fx)
+                        if (existInO.Element.gx < tmpNode.gx)
                         {
                             existInO.Element.parent = node;
                             existInO.Element.gx = tmpNode.gx;
@@ -625,7 +625,7 @@ namespace Logic
             try
             {
                 FallToSide(state, dir);
-                return state;
+                //return state;
                 var mapValue = _gameMap.getMapValue(state.X, state.Y);
                 
                 if (mapValue != 0) return state;
