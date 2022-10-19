@@ -373,14 +373,33 @@ namespace Logic
                 return true;
             }
 
+            C[node.ToString()] = node;
+
             foreach (Direction dir in Enum.GetValues(typeof(Direction)))
             {
                 var possibleState = _game.CanMove(dir);
                 if (possibleState != null)
                 {
-                    var tmpNode = new Node { value = possibleState, parent = node, dirToThisState = dir, gx = node.gx + 1 };
+                    var tmpNode = new Node { value = possibleState, parent = node, dirToThisState = dir };
+                    tmpNode.gx = node.gx + 1;
                     tmpNode.fx = f(tmpNode);
-                    // смотрим есть ли такое состояние в списке O
+
+                    if (C.Count(x => x.Value == tmpNode) != 0) continue;
+                    var existInO = O.UnorderedItems.SingleOrDefault(x => x.Element == tmpNode);
+                    if (existInO.Element == null)
+                    {
+                        O.Enqueue(tmpNode, tmpNode.fx);
+                    }
+                    else
+                    {
+                        if (existInO.Element.fx < tmpNode.fx)
+                        {
+                            existInO.Element.parent = node;
+                            existInO.Element.gx = tmpNode.gx;
+                        }
+                    }
+
+                    /*// смотрим есть ли такое состояние в списке O
                     var existInO = O.UnorderedItems.SingleOrDefault(x => x.Element == tmpNode);
                     if (existInO.Element != null)
                     {
@@ -398,8 +417,10 @@ namespace Logic
                             if (existInC.Value.fx < tmpNode.fx)
                             {
                                 C.Remove(existInC.Key);
+                                existInC.Value.parent = tmpNode;
                                 existInC.Value.fx = tmpNode.fx;
-                                existInC.Value.hx = tmpNode.hx;
+                                existInC.Value.gx = tmpNode.gx;
+                                //existInC.Value.hx = tmpNode.hx;
                                 O.Enqueue(existInC.Value, existInC.Value.fx);
                             }
                         }
@@ -407,13 +428,13 @@ namespace Logic
                         {
                             O.Enqueue(tmpNode, tmpNode.fx);
                         }
-                    }
-                    
-                    
-                    
+                    }*/
+
+
+
                 }
             }
-            C[node.ToString()] = node;
+            
 
             if (O.Count == 0)
             {

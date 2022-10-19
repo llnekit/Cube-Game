@@ -112,7 +112,7 @@ namespace Main
             private bool _freezeResults = false;
             private bool _isReplay = false;
             private int _replayCounter = 0;
-            private readonly double waitTime = 2; // в секундах
+            private readonly double waitTime = 0.3; // в секундах
             private double passed = 0;
             private string currentSearchMode = "g(x)";
 
