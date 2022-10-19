@@ -412,24 +412,6 @@ namespace Logic
 
                     if (C.Count(x => x.Value == tmpNode) != 0) continue;
 
-                    /*// смотрим есть ли такое состояние в списаке C
-                    var existInC = C.SingleOrDefault(x => x.Value == tmpNode);
-                    if (existInC.Key != null && SearchMode != 0)
-                    {
-                        if (existInC.Value.fx < tmpNode.fx)
-                        {
-                            
-                            existInC.Value.parent = node;
-                            //existInC.Value.fx = tmpNode.fx;
-                            existInC.Value.gx = tmpNode.gx;
-                            //existInC.Value.fx = f(existInC.Value);
-                            //existInC.Value.hx = tmpNode.hx;
-                            O.Enqueue(existInC.Value, existInC.Value.fx);
-                            C.Remove(existInC.Key);
-                            continue;
-                        }
-                    }*/
-
                     var existInO = O.UnorderedItems.SingleOrDefault(x => x.Element == tmpNode);
                     if (existInO.Element == null)
                     {
@@ -437,7 +419,7 @@ namespace Logic
                     }
                     else
                     {
-                        if (existInO.Element.gx < tmpNode.gx)
+                        if (existInO.Element.fx < tmpNode.fx)
                         {
                             existInO.Element.parent = node;
                             existInO.Element.gx = tmpNode.gx;
