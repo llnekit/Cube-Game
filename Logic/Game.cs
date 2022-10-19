@@ -312,16 +312,42 @@ namespace Logic
 
         private double h1 (Node x)
         {
-            var wayLenght = Math.Abs(x.value.X - _finishState.X) + Math.Abs(x.value.Y - _finishState.Y);
-            x.hx = wayLenght;
-            return wayLenght;
+            var wayLength = Math.Abs(x.value.X - _finishState.X) + Math.Abs(x.value.Y - _finishState.Y);
+            x.hx = wayLength;
+            return wayLength;
         }
 
         private double h2 (Node x)
         {
-            var wayLenght = Math.Sqrt((x.value.X - _finishState.X) * ((x.value.X - _finishState.X)) + (x.value.Y - _finishState.Y) * (x.value.Y - _finishState.Y));
-            x.hx = wayLenght;
-            return wayLenght;
+            double wayLength = 1000;
+
+            var tempState = new State(x.value);
+
+            while (tempState.X > FinishState.X)
+                _game.FallToSide(tempState, Direction.LEFT);
+            while (tempState.X < FinishState.X)
+                _game.FallToSide(tempState, Direction.RIGHT);
+            while (tempState.Y > FinishState.Y)
+                _game.FallToSide(tempState, Direction.DOWN);
+            while (tempState.Y < FinishState.Y)
+                _game.FallToSide(tempState, Direction.UP);
+
+
+            wayLength = Math.Abs(x.value.X - _finishState.X) + Math.Abs(x.value.Y - _finishState.Y);
+
+            switch(tempState.Side)
+            {
+                case Side.RIGHT:    wayLength += 1; break;
+                case Side.LEFT:     wayLength += 1; break;
+                case Side.UP:       wayLength += 1; break;
+                case Side.DOWN:     wayLength += 1; break;
+                case Side.FORWARD:  wayLength += 1; break;
+                case Side.BACK:     wayLength += 1; break;
+                
+            }
+
+            x.hx = wayLength;
+            return wayLength;
         }
 
         private double f(Node x)
@@ -385,6 +411,25 @@ namespace Logic
                     tmpNode.fx = f(tmpNode);
 
                     if (C.Count(x => x.Value == tmpNode) != 0) continue;
+
+                    /*// смотрим есть ли такое состояние в списаке C
+                    var existInC = C.SingleOrDefault(x => x.Value == tmpNode);
+                    if (existInC.Key != null && SearchMode != 0)
+                    {
+                        if (existInC.Value.fx < tmpNode.fx)
+                        {
+                            
+                            existInC.Value.parent = node;
+                            //existInC.Value.fx = tmpNode.fx;
+                            existInC.Value.gx = tmpNode.gx;
+                            //existInC.Value.fx = f(existInC.Value);
+                            //existInC.Value.hx = tmpNode.hx;
+                            O.Enqueue(existInC.Value, existInC.Value.fx);
+                            C.Remove(existInC.Key);
+                            continue;
+                        }
+                    }*/
+
                     var existInO = O.UnorderedItems.SingleOrDefault(x => x.Element == tmpNode);
                     if (existInO.Element == null)
                     {
@@ -518,73 +563,71 @@ namespace Logic
         /// </summary>
         public Vector3 PlayerPos => _player._position;
 
+        public void FallToSide(State state, Direction dir)
+        {
+            switch (dir)
+            {
+                case Direction.LEFT:
+                    switch (state.Side)
+                    {
+                        case Side.LEFT: state.Side = Side.DOWN; break;
+                        case Side.RIGHT: state.Side = Side.UP; break;
+                        case Side.FORWARD: state.Side = Side.FORWARD; break;
+                        case Side.BACK: state.Side = Side.BACK; break;
+                        case Side.UP: state.Side = Side.LEFT; break;
+                        case Side.DOWN: state.Side = Side.RIGHT; break;
+                    }
+                    state.X--;
+                    break;
+                case Direction.RIGHT:
+                    switch (state.Side)
+                    {
+                        case Side.LEFT: state.Side = Side.UP; break;
+                        case Side.RIGHT: state.Side = Side.DOWN; break;
+                        case Side.FORWARD: state.Side = Side.FORWARD; break;
+                        case Side.BACK: state.Side = Side.BACK; break;
+                        case Side.UP: state.Side = Side.RIGHT; break;
+                        case Side.DOWN: state.Side = Side.LEFT; break;
+                    }
+                    state.X++;
+                    break;
+                case Direction.UP:
+                    switch (state.Side)
+                    {
+                        case Side.LEFT: state.Side = Side.LEFT; break;
+                        case Side.RIGHT: state.Side = Side.RIGHT; break;
+                        case Side.FORWARD: state.Side = Side.DOWN; break;
+                        case Side.BACK: state.Side = Side.UP; break;
+                        case Side.UP: state.Side = Side.FORWARD; break;
+                        case Side.DOWN: state.Side = Side.BACK; break;
+                    }
+                    state.Y++;
+                    break;
+                case Direction.DOWN:
+                    switch (state.Side)
+                    {
+                        case Side.LEFT: state.Side = Side.LEFT; break;
+                        case Side.RIGHT: state.Side = Side.RIGHT; break;
+                        case Side.FORWARD: state.Side = Side.UP; break;
+                        case Side.BACK: state.Side = Side.DOWN; break;
+                        case Side.UP: state.Side = Side.BACK; break;
+                        case Side.DOWN: state.Side = Side.FORWARD; break;
+                    }
+                    state.Y--;
+                    break;
+            }
+        }
+
         public State CanMove(Direction dir)
         {
             var state = new State(_AI.CurrentState);
 
             try
             {
-                switch(dir)
-                {
-                    case Direction.LEFT:
-                        switch (state.Side)
-                        {
-                            case Side.LEFT:     state.Side = Side.DOWN; break;
-                            case Side.RIGHT:    state.Side = Side.UP; break;
-                            case Side.FORWARD:  state.Side = Side.FORWARD; break;
-                            case Side.BACK:     state.Side = Side.BACK; break;
-                            case Side.UP:       state.Side = Side.LEFT; break;
-                            case Side.DOWN:     state.Side = Side.RIGHT; break;
-                        }
-                        state.X--;
-                        break;
-                    case Direction.RIGHT:
-                        switch (state.Side)
-                        {
-                            case Side.LEFT:     state.Side = Side.UP; break;
-                            case Side.RIGHT:    state.Side = Side.DOWN; break;
-                            case Side.FORWARD:  state.Side = Side.FORWARD; break;
-                            case Side.BACK:     state.Side = Side.BACK; break;
-                            case Side.UP:       state.Side = Side.RIGHT; break;
-                            case Side.DOWN:     state.Side = Side.LEFT; break;
-                        }
-                        state.X++; 
-                        break;
-                    case Direction.UP:
-                        switch (state.Side)
-                        {
-                            case Side.LEFT:     state.Side = Side.LEFT; break;
-                            case Side.RIGHT:    state.Side = Side.RIGHT; break;
-                            case Side.FORWARD:  state.Side = Side.DOWN; break;
-                            case Side.BACK:     state.Side = Side.UP; break;
-                            case Side.UP:       state.Side = Side.FORWARD; break;
-                            case Side.DOWN:     state.Side = Side.BACK; break;
-                        }
-                        state.Y++; 
-                        break;
-                    case Direction.DOWN:
-                        switch (state.Side)
-                        {
-                            case Side.LEFT:     state.Side = Side.LEFT; break;
-                            case Side.RIGHT:    state.Side = Side.RIGHT; break;
-                            case Side.FORWARD:  state.Side = Side.UP; break;
-                            case Side.BACK:     state.Side = Side.DOWN; break;
-                            case Side.UP:       state.Side = Side.BACK; break;
-                            case Side.DOWN:     state.Side = Side.FORWARD; break;
-                        }
-                        state.Y--; 
-                        break;
-                }
-
-                /*foreach (var row in map)
-                {
-                    Console.WriteLine();
-                    foreach (var col in row)
-                        Console.Write(col.ToString() + " ");
-                }
-                Console.WriteLine();*/
+                FallToSide(state, dir);
+                return state;
                 var mapValue = _gameMap.getMapValue(state.X, state.Y);
-                //Console.WriteLine($"Желаемые координаты _x = {state.X} _y = {state.Y} map_value = {mapValue}");
+                
                 if (mapValue != 0) return state;
             }
             catch (Exception ex)
