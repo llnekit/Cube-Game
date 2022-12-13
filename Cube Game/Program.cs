@@ -389,7 +389,23 @@ namespace Main
 
                         _playCube.MainSide = (int)_game.CurrentSide;
                     }
-                    else if (!_freezeResults) _textSurface.AppendText("Press U to start AI");
+                    else if (!_freezeResults)
+                    {
+                        _textSurface.AppendText("Press U to start AI");
+                        _textSurface.AppendText("Current D = " + _d);
+                        _textSurface.AppendText("Current cursor = " + _cursor);
+                        if (_savedStates != null)
+                        {
+                            _textSurface.AppendText("StartStates count = " + _savedStates.Count);
+                            /*if (_savedStates.Count != 0)
+                            {
+                                _textSurface.AppendText("StartStates: ");
+                                for (int i = 0; i < _savedStates.Count; i++)
+                                    _textSurface.AppendText(_savedStates[i].ToString());
+                            }*/
+                        }
+
+                    }
 
 
 
@@ -466,6 +482,11 @@ namespace Main
                 _wayTextSurface.Clear();
                 _textSurface.Clear();
             }
+
+            private List<State> _savedStates = new List<State>();
+            private int _d = 2;
+            private int _cursor = 0;
+
 
             protected override void OnUpdateFrame(FrameEventArgs e)
             {
@@ -551,31 +572,63 @@ namespace Main
                     }    
                     
                 }
-                if (input.IsKeyReleased(Keys.KeyPad0))
+                if (input.IsKeyReleased(Keys.D1))
                 {
                     _game.AISearchMode = 0;
                     currentSearchMode = "g(x)";
                 }
-                if (input.IsKeyReleased(Keys.KeyPad1))
+                if (input.IsKeyReleased(Keys.D2))
                 {
                     _game.AISearchMode = 1;
                     currentSearchMode = "h1(x)";
                 }
-                if (input.IsKeyReleased(Keys.KeyPad2))
+                if (input.IsKeyReleased(Keys.D3))
                 {
                     _game.AISearchMode = 2;
                     currentSearchMode = "g(x) + h1(x)";
                 }
-                if (input.IsKeyReleased(Keys.KeyPad4))
+                if (input.IsKeyReleased(Keys.D4))
                 {
                     _game.AISearchMode = 3;
                     currentSearchMode = "h2(x)";
                 }
-                if (input.IsKeyReleased(Keys.KeyPad5))
+                if (input.IsKeyReleased(Keys.D5))
                 {
                     _game.AISearchMode = 4;
                     currentSearchMode = "g(x) + h2(x)";
                 }
+                // ==================== STATE GENERATOR =================== //
+                if (input.IsKeyReleased(Keys.F9))
+                {
+                    _savedStates = _game.GetStartStates(_d);
+                    _cursor = 0;
+                    if (_savedStates != null && _savedStates.Count != 0)
+                        _playCube.MainSide = _game.MovePlayer(_savedStates[_cursor]);
+                }
+                if (input.IsKeyReleased(Keys.KeyPad4))
+                {
+                    if (_savedStates != null && _savedStates.Count != 0 && _cursor != 0)
+                    {
+                        _playCube.MainSide = _game.MovePlayer(_savedStates[--_cursor]);
+                    }
+                }
+                if (input.IsKeyReleased(Keys.KeyPad6))
+                {
+                    if (_savedStates != null && _cursor + 1 < _savedStates.Count)
+                    {
+                        _playCube.MainSide = _game.MovePlayer(_savedStates[++_cursor]);
+                    }
+                }
+                if (input.IsKeyReleased(Keys.KeyPad8))
+                {
+                    _d += 5;
+                }
+                if (input.IsKeyReleased(Keys.KeyPad2))
+                {
+                    if (_d - 5 > 1)
+                        _d -= 5;
+                }
+                // ==================== STATE GENERATOR =================== //
                 if (input.IsKeyReleased(Keys.T))
                 {
                     _playCube.MainSide = _game.MovePlayer(_game.StartState);

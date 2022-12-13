@@ -319,7 +319,6 @@ namespace Logic
 
         private double h2 (Node x)
         {
-            double wayLength = 1000;
 
             var tempState = new State(x.value);
 
@@ -333,7 +332,7 @@ namespace Logic
                 _game.FallToSide(tempState, Direction.UP);
 
 
-            wayLength = Math.Abs(x.value.X - _finishState.X) + Math.Abs(x.value.Y - _finishState.Y);
+            var wayLength = Math.Abs(x.value.X - _finishState.X) + Math.Abs(x.value.Y - _finishState.Y);
 
             switch(tempState.Side)
             {
@@ -652,13 +651,46 @@ namespace Logic
 
         public double AIWorkingTime => _AI.WorkingTime;
 
-        public int ReplayStep(int currentStep)
-        {
-            return 0;
-        }
-
         public int AISearchMode { get { return _AI.SearchMode;} set { _AI.SearchMode = value; } }
 
+        public List<State> GetStartStates(int d)
+        {
+            if (d < 2) return null;
+            _AI.CurrentState = this.FinishState;
+            var oldStates = new List<State>();
+            oldStates.Add(this.FinishState);
+            foreach (Direction dir in Enum.GetValues(typeof(Direction)))
+            {
+                var possibleState = this.CanMove(dir);
+                if (possibleState != null)
+                {
+                    oldStates.Add(possibleState);
+                }
+            }
+            var prevStates = new List<State>();
+            foreach (var state in oldStates)
+                prevStates.Add(state);
+            for (int i = 2; i <= d; i++)
+            {
+                var tmp = new List<State>();
+                foreach (var prevState in prevStates)
+                {
+                    _AI.CurrentState = prevState;
+                    foreach (Direction dir in Enum.GetValues(typeof(Direction)))
+                    {
+                        var possibleState = this.CanMove(dir);
+                        if (possibleState != null && !oldStates.Any(x => x == possibleState))
+                        {
+                            tmp.Add(possibleState);
+                            oldStates.Add(possibleState);
+                        }
+                    }
+
+                }
+                prevStates = tmp;
+            }
+            return prevStates;
+        }
     }
     
 }
