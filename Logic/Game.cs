@@ -4,6 +4,7 @@ using System;
 using System.Drawing;
 using System.Net.NetworkInformation;
 using System.Text;
+using System.Xml.Linq;
 
 namespace Logic
 {
@@ -528,11 +529,47 @@ namespace Logic
 
         public double AIWorkingTime => _AI.WorkingTime;
 
-        public int ReplayStep(int currentStep)
+        public List<State> GetStartStates (int d)
         {
-            return 0;
+            if (d < 2) return null;
+            _AI.CurrentState = this.FinishState;
+            var oldStates = new List<State> ();
+            oldStates.Add(this.FinishState);
+            foreach (Direction dir in Enum.GetValues(typeof(Direction)))
+            {
+                var possibleState = this.CanMove(dir);
+                if (possibleState != null)
+                {
+                    oldStates.Add(possibleState);
+                }
+            }
+            var prevStates = new List<State>();
+            foreach (var state in oldStates)
+                prevStates.Add(state);
+            for (int i = 2; i <= d; i++)
+            {
+                var tmp = new List<State>();
+                foreach (var prevState in prevStates)
+                {
+                    _AI.CurrentState = prevState;
+                    foreach (Direction dir in Enum.GetValues(typeof(Direction)))
+                    {
+                        var possibleState = this.CanMove(dir);
+                        if (possibleState != null && !oldStates.Any(x => x == possibleState))
+                        {
+                            tmp.Add(possibleState);
+                            oldStates.Add(possibleState);
+                        }
+                    }
+
+                }
+                prevStates = tmp;
+            }
+            return prevStates;
         }
 
     }
     
+    
+
 }

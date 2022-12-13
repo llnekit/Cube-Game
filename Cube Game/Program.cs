@@ -390,11 +390,30 @@ namespace Main
                             _textSurface.AppendText("Press Y to Restart");
                             _textSurface.AppendText("Press T to StartPose");
                             _textSurface.AppendText("Press R to Replay");
+                            
+                           
                         }
 
                         _playCube.MainSide = (int)_game.CurrentSide;
                     }
-                    else if (!_freezeResults) _textSurface.AppendText("Press U to start AI");
+                    else if (!_freezeResults)
+                    {
+                        _textSurface.AppendText("Press U to start AI");
+                        _textSurface.AppendText("Current D = " + _d);
+                        _textSurface.AppendText("Current cursor = " + _cursor);
+                        if (_savedStates != null)
+                        {
+                            _textSurface.AppendText("StartStates count = " + _savedStates.Count);
+                            /*if (_savedStates.Count != 0)
+                            {
+                                _textSurface.AppendText("StartStates: ");
+                                for (int i = 0; i < _savedStates.Count; i++)
+                                    _textSurface.AppendText(_savedStates[i].ToString());
+                            }*/
+                        }
+                        
+                    }
+                    
 
 
 
@@ -472,6 +491,10 @@ namespace Main
                 _textSurface.Clear();
             }
 
+            private List<State> _savedStates = new List<State>();
+            private int _d = 2;
+            private int _cursor = 0;
+
             protected override void OnUpdateFrame(FrameEventArgs e)
             {
                 base.OnUpdateFrame(e);
@@ -531,6 +554,38 @@ namespace Main
                 {
                     UpdateGameMap("map3.txt");
                 }
+                // ==================== STATE GENERATOR =================== //
+                if (input.IsKeyReleased(Keys.F9))
+                {
+                    _savedStates = _game.GetStartStates(_d);
+                    _cursor = 0;
+                    if (_savedStates != null && _savedStates.Count != 0)
+                        _playCube.MainSide = _game.MovePlayer(_savedStates[_cursor]);
+                }
+                if (input.IsKeyReleased(Keys.KeyPad4))
+                {
+                    if (_savedStates != null && _savedStates.Count != 0 && _cursor != 0)
+                    {
+                        _playCube.MainSide = _game.MovePlayer(_savedStates[--_cursor]);
+                    }
+                }
+                if (input.IsKeyReleased(Keys.KeyPad6))
+                {
+                    if (_savedStates != null && _cursor + 1 < _savedStates.Count)
+                    {
+                        _playCube.MainSide = _game.MovePlayer(_savedStates[++_cursor]);
+                    }
+                }
+                if (input.IsKeyReleased(Keys.KeyPad8))
+                {
+                    _d += 5;
+                }
+                if (input.IsKeyReleased(Keys.KeyPad2))
+                {
+                    if (_d - 5 > 1)
+                        _d -= 5;
+                }
+                // ==================== STATE GENERATOR =================== //
                 if (input.IsKeyReleased(Keys.P))
                 {
                     Console.WriteLine($"Pos = {_camera.Position} Pitch = {_camera.Pitch} Yaw = {_camera.Yaw}");
