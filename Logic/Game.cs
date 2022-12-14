@@ -310,16 +310,15 @@ namespace Logic
 
         private int g (Node x) => x.gx;
 
-        private double h1 (Node x)
+        private int h1 (Node x)
         {
             var wayLength = Math.Abs(x.value.X - _finishState.X) + Math.Abs(x.value.Y - _finishState.Y);
             x.hx = wayLength;
             return wayLength;
         }
 
-        private double h2 (Node x)
+        private int h2 (Node x)
         {
-
             var tempState = new State(x.value);
 
             while (tempState.X > FinishState.X)
